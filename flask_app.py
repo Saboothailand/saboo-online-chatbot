@@ -7,9 +7,12 @@ import os
 # ✅ .env 로드 (가장 먼저 실행)
 load_dotenv()
 
-# ✅ 디버깅용 출력 (환경변수 확인)
-print("✅ OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
-print("✅ GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+# ✅ Railway 배포 시 API 키 디버깅 출력 제거 (보안상)
+# 로컬 개발 시에만 출력하도록 수정
+if os.getenv('RAILWAY_ENVIRONMENT') != 'production':
+    print("✅ Environment loaded")
+    # API 키는 보안상 출력하지 않음
+    print("✅ GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
 # ✅ Flask 앱 초기화
 app = Flask(__name__)
@@ -22,6 +25,7 @@ from chatbot_utils import load_sheet, load_doc
 try:
     sheet_text = load_sheet()
     doc_text = load_doc()
+    print("✅ Google Sheets and Docs loaded successfully")
 except Exception as e:
     print(f"❌ Google API 연결 오류: {e}")
     sheet_text = "⚠️ 시트를 불러올 수 없습니다."
@@ -76,24 +80,38 @@ def chat():
 
     except Exception as e:
         print(f"❌ Error in chat route: {e}")
-        return jsonify({"error": "Server error."}), 500
+        return jsonify({"error": "Server error occurred. Please try again."}), 500
 
 
 def save_chat(user_msg, bot_msg):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open("chat_log.txt", "a", encoding='utf-8') as f:
-            f.write(f"[{timestamp}]\n")
-            f.write(f"User: {user_msg}\n")
-            f.write(f"Bot: {bot_msg}\n")
-            f.write("-" * 50 + "\n\n")
+        # Railway에서는 파일 시스템이 임시적이므로 로깅 방식 변경
+        if os.getenv('RAILWAY_ENVIRONMENT') == 'production':
+            # 프로덕션에서는 콘솔 로그만
+            print(f"[CHAT LOG {timestamp}] User: {user_msg[:50]}...")
+        else:
+            # 로컬에서는 파일 저장
+            with open("chat_log.txt", "a", encoding='utf-8') as f:
+                f.write(f"[{timestamp}]\n")
+                f.write(f"User: {user_msg}\n")
+                f.write(f"Bot: {bot_msg}\n")
+                f.write("-" * 50 + "\n\n")
     except Exception as e:
         print(f"❌ Log save error: {e}")
 
 @app.route('/health')
 def health():
-    return jsonify({"status": "healthy"})
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "google_sheets": "connected" if "시트를 불러올 수 없습니다" not in sheet_text else "error",
+        "google_docs": "connected" if "문서를 불러올 수 없습니다" not in doc_text else "error"
+    })
 
 if __name__ == '__main__':
+    # Railway에서 제공하는 PORT 환경변수 사용
     port = int(os.environ.get("PORT", 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # 프로덕션에서는 debug=False
+    debug_mode = os.getenv('RAILWAY_ENVIRONMENT') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
