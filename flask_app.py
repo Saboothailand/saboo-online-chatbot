@@ -253,10 +253,10 @@ def chat():
 
         prompt = f"""
 [Product Information]
-{sheet_text[:1500]}
+{sheet_text}          # 제한 제거
 
 [Company Information]
-{doc_text[:1500]}
+{doc_text}            # 제한 제거
 
 [User Question]
 {user_message}
