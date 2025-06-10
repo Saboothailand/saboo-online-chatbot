@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saboo Thailand Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffc0cb 0%, #ff69b4 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            height: 95vh;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .logo-section {
+            background: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo-placeholder {
+            width: 120px;
+            height: 60px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #ffc0cb 0%, #ff69b4 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            min-height: 0;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            animation: fadeIn 0.5s ease-in;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .bot-message {
+            justify-content: flex-start;
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .bot-avatar {
+            background: #ff69b4;
+            color: white;
+        }
+        
+        .user-avatar {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .user-message .bubble {
+            background: #ff69b4;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 18px 18px 5px 18px;
+            display: inline-block;
+            max-width: 85%;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+        
+        .bot-message .bubble {
+            background: white;
+            color: #333;
+            padding: 10px 14px;
+            border-radius: 18px 18px 18px 5px;
+            display: inline-block;
+            max-width: 85%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+        
+        .input-container {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #eee;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        #messageInput:focus {
+            border-color: #ff69b4;
+        }
+        
+        #sendButton {
+            background: linear-gradient(135deg, #ffc0cb 0%, #ff69b4 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        
+        #sendButton:hover {
+            transform: scale(1.05);
+        }
+        
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .chat-container {
+                height: 98vh;
+                max-height: none;
+                border-radius: 15px;
+            }
+            
+            .logo-section {
+                padding: 12px;
+            }
+            
+            .logo-placeholder {
+                width: 100px;
+                height: 50px;
+                font-size: 10px;
+            }
+            
+            .chat-header {
+                padding: 12px;
+                font-size: 1em;
+            }
+            
+            .chat-messages {
+                padding: 12px;
+            }
+            
+            .input-container {
+                padding: 12px;
+                gap: 6px;
+            }
+            
+            #messageInput {
+                padding: 8px 12px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            #sendButton {
+                padding: 8px 14px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 320px) {
+            .user-message .bubble,
+            .bot-message .bubble {
+                max-width: 90%;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="logo-section">
+            <div class="logo-placeholder">
+                <img src="https://saboothailand.com/images/saboo-logo.png" alt="Saboo Thailand Logo" class="logo-image">
+            </div>
+        </div>
+        
+        <div class="chat-header">
+            Saboo Thailand Chatbot
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="avatar bot-avatar">S</div>
+                <div class="bubble">
+                    Thank you for visiting Saboo Thailand! I am the Saboo Thailand chatbot here to help you. I can communicate in Korean, English, Thai, Japanese, and Chinese. How can I assist you today?
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            💬 Generating response...
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const chatMessages = document.getElementById('chatMessages');
+        const loading = document.getElementById('loading');
+
+        // Send message function
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Show loading
+            showLoading(true);
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage(data.reply, 'bot');
+                } else {
+                    addMessage('Sorry, an error occurred: ' + (data.error || 'Unknown error'), 'bot');
+                }
+            } catch (error) {
+                addMessage('Network error occurred. Please try again.', 'bot');
+            } finally {
+                showLoading(false);
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Add message function
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            // Create avatar
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = `avatar ${sender}-avatar`;
+            avatarDiv.textContent = sender === 'bot' ? 'S' : 'G';
+            
+            // Create bubble
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'bubble';
+            bubbleDiv.textContent = text;
+            
+            // Add elements in correct order
+            if (sender === 'bot') {
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(bubbleDiv);
+            } else {
+                messageDiv.appendChild(bubbleDiv);
+                messageDiv.appendChild(avatarDiv);
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show loading state
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+            if (show) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Focus on input when page loads
+        messageInput.focus();
+    </script>
+</body>
+</html>
