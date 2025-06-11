@@ -720,4 +720,4 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     logger.info(f"🚀 Starting server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug_debug_mode)
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)  # ✅ 올바른 코드
