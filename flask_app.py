@@ -350,41 +350,6 @@ def create_quick_reply_buttons():
     ]
 
 def split_response(text, max_length):
-    """자주 묻는 질문 빠른 답변 버튼"""
-    return [
-        {
-            "type": "action",
-            "action": {
-                "type": "message",
-                "label": "ผลิตภัณฑ์มีอะไรบ้าง",
-                "text": "มีผลิตภัณฑ์อะไรบ้างคะ"
-            }
-        },
-        {
-            "type": "action", 
-            "action": {
-                "type": "message",
-                "label": "ร้านอยู่ที่ไหน",
-                "text": "ร้าน SABOO อยู่ที่ไหนคะ"
-            }
-        },
-        {
-            "type": "action",
-            "action": {
-                "type": "message", 
-                "label": "วิธีสั่งซื้อ",
-                "text": "สั่งซื้อสินค้าได้อย่างไรคะ"
-            }
-        },
-        {
-            "type": "action",
-            "action": {
-                "type": "uri",
-                "label": "Shopee",
-                "uri": "https://shopee.co.th/thailandsoap"
-            }
-        }
-    ]
     """응답을 적절한 길이로 분할"""
     if len(text) <= max_length:
         return [text]
@@ -583,9 +548,24 @@ def line_webhook():
                 # 환영 메시지 처리
                 if user_text.lower() in ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม"]:
                     flex_message = create_welcome_message()
+                    payload = {
+                        "replyToken": reply_token,
+                        "messages": [flex_message]
+                    }
                 else:
-                    # 일반 질문 처리
-                    prompt = f"""
+                    # 일반 질문 처리 - OpenAI 클라이언트 확인
+                    if not client:
+                        simple_message = {
+                            "type": "text",
+                            "text": "ขออภัยค่ะ ระบบมีปัญหาชั่วคราว กรุณาลองใหม่อีกครั้งค่ะ 🙏"
+                        }
+                        payload = {
+                            "replyToken": reply_token,
+                            "messages": [simple_message]
+                        }
+                    else:
+                        # GPT 응답 생성
+                        prompt = f"""
 [Product Info]
 {sheet_text[:5000]}
 
@@ -596,39 +576,43 @@ def line_webhook():
 {user_text}
 """
 
-                    completion = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": SYSTEM_MESSAGE},
-                            {"role": "user", "content": prompt}
-                        ],
-                        max_tokens=1000,
-                        temperature=0.7
-                    )
+                        completion = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=[
+                                {"role": "system", "content": SYSTEM_MESSAGE},
+                                {"role": "user", "content": prompt}
+                            ],
+                            max_tokens=1000,
+                            temperature=0.7
+                        )
 
-                    bot_response = completion.choices[0].message.content.strip()
-                    flex_message = create_flex_message(bot_response, user_text)
-                    
-                    # Quick Reply 버튼 추가 (특정 키워드에 대해)
-                    if any(keyword in user_text.lower() for keyword in ["ผลิตภัณฑ์", "สินค้า", "ขาย", "มีอะไร"]):
-                        # 제품 관련 질문에는 Quick Reply 추가
-                        payload = {
-                            "replyToken": reply_token,
-                            "messages": [flex_message],
-                            "quickReply": {
-                                "items": create_quick_reply_buttons()
+                        bot_response = completion.choices[0].message.content.strip()
+                        flex_message = create_flex_message(bot_response, user_text)
+                        
+                        # Quick Reply 버튼 추가 (특정 키워드에 대해)
+                        if any(keyword in user_text.lower() for keyword in ["ผลิตภัณฑ์", "สินค้า", "ขาย", "มีอะไร"]):
+                            # 제품 관련 질문에는 Quick Reply 추가
+                            payload = {
+                                "replyToken": reply_token,
+                                "messages": [flex_message],
+                                "quickReply": {
+                                    "items": create_quick_reply_buttons()
+                                }
                             }
-                        }
-                    else:
-                        payload = {
-                            "replyToken": reply_token,
-                            "messages": [flex_message]
-                        }
+                        else:
+                            payload = {
+                                "replyToken": reply_token,
+                                "messages": [flex_message]
+                            }
 
                 save_chat(user_text, "Flex message sent", user_id)
 
                 # LINE API로 응답 전송
-                line_token = os.getenv("LINE_TOKEN", "")
+                line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN") or os.getenv("LINE_TOKEN", "")
+                if not line_token:
+                    logger.error("❌ LINE_CHANNEL_ACCESS_TOKEN not found!")
+                    return "Error: Missing LINE token", 500
+                    
                 headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {line_token}"
@@ -643,6 +627,8 @@ def line_webhook():
                 
                 if response.status_code != 200:
                     logger.error(f"❌ LINE API Error: {response.status_code} - {response.text}")
+                else:
+                    logger.info(f"✅ Message sent successfully to user {user_id}")
                 
             elif event.get("type") == "postback":
                 # Postback 이벤트 처리
@@ -655,12 +641,14 @@ def line_webhook():
         return "OK", 200
     except Exception as e:
         logger.error(f"❌ LINE Webhook Error: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return "Error", 500
 
 def handle_postback(data, reply_token, user_id):
     """Postback 이벤트 처리"""
     try:
-        line_token = os.getenv("LINE_TOKEN", "")
+        line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN") or os.getenv("LINE_TOKEN", "")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {line_token}"
@@ -679,7 +667,7 @@ def handle_postback(data, reply_token, user_id):
         else:
             message = {
                 "type": "text",
-                "text": "ขออปัยค่ะ ดิฉันไม่เข้าใจคำขอนี้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ 😊"
+                "text": "ขออภัยค่ะ ดิฉันไม่เข้าใจคำขอนี้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ 😊"
             }
         
         payload = {
@@ -732,4 +720,4 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     logger.info(f"🚀 Starting server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    app.run(host='0.0.0.0', port=port, debug_debug_mode)
