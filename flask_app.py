@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import logging
 import requests
+import json
 
 # ✅ .env 로드
 load_dotenv()
@@ -32,6 +33,15 @@ try:
 except Exception as e:
     logger.error(f"❌ OpenAI client initialization failed: {e}")
     client = None
+
+# ✅ LINE 설정 확인
+LINE_TOKEN = os.getenv("LINE_TOKEN") or os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_SECRET = os.getenv("LINE_SECRET") or os.getenv("LINE_CHANNEL_SECRET")
+
+if not LINE_TOKEN:
+    logger.error("❌ LINE_TOKEN or LINE_CHANNEL_ACCESS_TOKEN not found!")
+if not LINE_SECRET:
+    logger.error("❌ LINE_SECRET or LINE_CHANNEL_SECRET not found!")
 
 # ✅ Google 시트 및 문서 기본 정보
 saboo_thai_info = """
@@ -108,593 +118,108 @@ SYSTEM_MESSAGE = """
 - ติดต่อ → ให้เบอร์โทรและอีเมล
 """
 
-# ✅ LINE Flex Message 템플릿 생성 함수
-def create_flex_message(bot_response, user_message=""):
-    """LINE Flex Message 포맷으로 응답 생성"""
-    
-    # 응답 길이에 따라 다른 템플릿 사용
-    if len(bot_response) > 800:
-        return create_long_response_flex(bot_response)
-    else:
-        return create_standard_response_flex(bot_response)
-
-def create_standard_response_flex(bot_response):
-    """표준 응답용 Flex Message"""
-    return {
-        "type": "flex",
-        "altText": "SABOO THAILAND ตอบคำถาม",
-        "contents": {
-            "type": "bubble",
-            "size": "kilo",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": "🧴 SABOO THAILAND",
-                                "weight": "bold",
-                                "size": "lg",
-                                "color": "#2E7D32",
-                                "flex": 1
-                            },
-                            {
-                                "type": "text",
-                                "text": "💕",
-                                "size": "lg",
-                                "align": "end"
-                            }
-                        ]
-                    }
-                ],
-                "backgroundColor": "#FFE4E6",
-                "paddingAll": "15px",
-                "spacing": "md"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": bot_response,
-                        "wrap": True,
-                        "size": "md",
-                        "color": "#333333",
-                        "lineSpacing": "sm"
-                    }
-                ],
-                "paddingAll": "20px",
-                "spacing": "md"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "separator",
-                        "margin": "md"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {
-                                "type": "button",
-                                "style": "link",
-                                "height": "sm",
-                                "action": {
-                                    "type": "postback",
-                                    "label": "สอบถามผลิตภัณฑ์",
-                                    "data": "action=product_inquiry"
-                                },
-                                "color": "#E91E63"
-                            },
-                            {
-                                "type": "button",
-                                "style": "link",
-                                "height": "sm",
-                                "action": {
-                                    "type": "uri",
-                                    "label": "เว็บไซต์",
-                                    "uri": "https://www.saboothailand.com"
-                                },
-                                "color": "#2E7D32"
-                            }
-                        ],
-                        "spacing": "sm",
-                        "margin": "md"
-                    }
-                ],
-                "paddingAll": "15px"
-            }
-        }
-    }
-
-def create_long_response_flex(bot_response):
-    """긴 응답용 Carousel Flex Message"""
-    # 응답을 적절한 길이로 분할
-    chunks = split_response(bot_response, 600)
-    
-    bubbles = []
-    for i, chunk in enumerate(chunks):
-        bubble = {
-            "type": "bubble",
-            "size": "kilo",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"🧴 SABOO THAILAND ({i+1}/{len(chunks)})",
-                        "weight": "bold",
-                        "size": "lg",
-                        "color": "#2E7D32"
-                    }
-                ],
-                "backgroundColor": "#FFE4E6",
-                "paddingAll": "15px"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": chunk,
-                        "wrap": True,
-                        "size": "md",
-                        "color": "#333333",
-                        "lineSpacing": "sm"
-                    }
-                ],
-                "paddingAll": "20px"
-            }
-        }
+# ✅ LINE 서명 검증 함수
+def verify_line_signature(body, signature):
+    """LINE Webhook 서명 검증"""
+    try:
+        import hashlib
+        import hmac
+        import base64
         
-        # 마지막 bubble에만 footer 추가
-        if i == len(chunks) - 1:
-            bubble["footer"] = {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "separator",
-                        "margin": "md"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {
-                                "type": "button",
-                                "style": "link",
-                                "height": "sm",
-                                "action": {
-                                    "type": "postback",
-                                    "label": "สอบถามเพิ่มเติม",
-                                    "data": "action=more_inquiry"
-                                },
-                                "color": "#E91E63"
-                            },
-                            {
-                                "type": "button",
-                                "style": "link",
-                                "height": "sm",
-                                "action": {
-                                    "type": "uri",
-                                    "label": "แคตตาล็อก",
-                                    "uri": "https://books.saboothailand.com/books/bxte/#p=1"
-                                },
-                                "color": "#2E7D32"
-                            }
-                        ],
-                        "spacing": "sm",
-                        "margin": "md"
-                    }
-                ],
-                "paddingAll": "15px"
-            }
+        if not LINE_SECRET:
+            logger.warning("⚠️ LINE_SECRET not set, skipping signature verification")
+            return True
+            
+        hash = hmac.new(LINE_SECRET.encode('utf-8'), body, hashlib.sha256).digest()
+        expected_signature = base64.b64encode(hash).decode('utf-8')
         
-        bubbles.append(bubble)
-    
-    return {
-        "type": "flex",
-        "altText": "SABOO THAILAND คำตอบแบบละเอียด",
-        "contents": {
-            "type": "carousel",
-            "contents": bubbles
-        }
-    }
+        return signature == expected_signature
+    except Exception as e:
+        logger.error(f"❌ Signature verification error: {e}")
+        return False
 
-def create_quick_reply_buttons():
-    """자주 묻는 질문 빠른 답변 버튼"""
-    return [
-        {
-            "type": "action",
-            "action": {
-                "type": "message",
-                "label": "ผลิตภัณฑ์มีอะไรบ้าง",
-                "text": "มีผลิตภัณฑ์อะไรบ้างคะ"
-            }
-        },
-        {
-            "type": "action", 
-            "action": {
-                "type": "message",
-                "label": "ร้านอยู่ที่ไหน",
-                "text": "ร้าน SABOO อยู่ที่ไหนคะ"
-            }
-        },
-        {
-            "type": "action",
-            "action": {
-                "type": "message", 
-                "label": "วิธีสั่งซื้อ",
-                "text": "สั่งซื้อสินค้าได้อย่างไรคะ"
-            }
-        },
-        {
-            "type": "action",
-            "action": {
-                "type": "uri",
-                "label": "Shopee",
-                "uri": "https://shopee.co.th/thailandsoap"
-            }
-        }
-    ]
-
-def split_response(text, max_length):
-    """응답을 적절한 길이로 분할"""
-    if len(text) <= max_length:
-        return [text]
-    
-    chunks = []
-    current_chunk = ""
-    
-    sentences = text.split('. ')
-    for sentence in sentences:
-        if len(current_chunk + sentence + '. ') <= max_length:
-            current_chunk += sentence + '. '
-        else:
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-                current_chunk = sentence + '. '
-            else:
-                # 단일 문장이 너무 긴 경우
-                chunks.append(sentence[:max_length] + '...')
-    
-    if current_chunk:
-        chunks.append(current_chunk.strip())
-    
-    return chunks
-
-def create_welcome_message():
-    """환영 메시지용 Flex Message"""
-    return {
-        "type": "flex",
-        "altText": "ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ!",
-        "contents": {
-            "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": "https://via.placeholder.com/1040x585/E91E63/FFFFFF?text=SABOO+THAILAND+🧴",
-                "size": "full",
-                "aspectRatio": "20:13",
-                "aspectMode": "cover"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "🧴 SABOO THAILAND",
-                        "weight": "bold",
-                        "size": "xl",
-                        "color": "#2E7D32"
-                    },
-                    {
-                        "type": "text",
-                        "text": "สวัสดีค่ะ! 💕 ดิฉันยินดีให้คำแนะนำเกี่ยวกับผลิตภัณฑ์สบู่และผลิตภัณฑ์อาบน้ำธรรมชาติของเราค่ะ",
-                        "size": "sm",
-                        "color": "#666666",
-                        "margin": "md",
-                        "wrap": True
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "lg"
-                    },
-                    {
-                        "type": "text",
-                        "text": "🌟 บริการของเรา",
-                        "weight": "bold",
-                        "margin": "lg",
-                        "color": "#2E7D32"
-                    },
-                    {
-                        "type": "text",
-                        "text": "• สอบถามข้อมูลผลิตภัณฑ์\n• คำแนะนำวิธีใช้\n• ส่วนประกอบและสรรพคุณ\n• ช่องทางการสั่งซื้อ\n• คำแนะนำดูแลผิว",
-                        "size": "sm",
-                        "margin": "md",
-                        "wrap": True
-                    },
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "margin": "lg",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": "📍 ร้าน: มิกซ์ จตุจักร ชั้น 2",
-                                "size": "xs",
-                                "color": "#888888"
-                            },
-                            {
-                                "type": "text", 
-                                "text": "📞 โทร: 02-159-9880",
-                                "size": "xs",
-                                "color": "#888888"
-                            },
-                            {
-                                "type": "text",
-                                "text": "🛒 Shopee: shopee.co.th/thailandsoap",
-                                "size": "xs", 
-                                "color": "#888888"
-                            }
-                        ]
-                    }
-                ],
-                "spacing": "sm",
-                "paddingAll": "20px"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "height": "sm",
-                        "action": {
-                            "type": "message",
-                            "label": "สอบถามผลิตภัณฑ์",
-                            "text": "อยากทราบเกี่ยวกับผลิตภัณฑ์ค่ะ"
-                        },
-                        "color": "#E91E63"
-                    },
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "เว็บไซต์ SABOO",
-                            "uri": "https://www.saboothailand.com"
-                        }
-                    }
-                ],
-                "spacing": "sm",
-                "paddingAll": "20px"
-            }
-        }
-    }
-
-# ✅ 인덱스 라우트
-@app.route('/')
-def index():
-    return "<h1>Saboo Thailand Chatbot is running.</h1>"
-
-# ✅ 웹 챗 라우트
-@app.route('/chat', methods=['POST'])
-def chat():
+# ✅ GPT 응답 생성 함수
+def get_gpt_response(user_message):
+    """OpenAI GPT로 응답 생성"""
     try:
         if not client:
-            return jsonify({"error": "OpenAI not available."}), 500
-
-        user_message = request.json.get('message', '').strip()
-        if not user_message:
-            return jsonify({"error": "Empty message."}), 400
-
+            return "ขออภัยค่ะ ระบบมีปัญหาชั่วคราว กรุณาลองใหม่อีกครั้งค่ะ 🙏"
+        
         prompt = f"""
 [Product Info]
 {sheet_text[:5000]}
 
-[Company Info]
+[Company Info]  
 {doc_text[:5000]}
 
 [User]
 {user_message}
 """
-
+        
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": SYSTEM_MESSAGE},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
-            temperature=0.7
+            max_tokens=800,  # LINE 메시지 제한 고려
+            temperature=0.7,
+            timeout=25  # 25초 타임아웃 (LINE 30초 제한)
         )
-
-        bot_response = completion.choices[0].message.content.strip()
-        save_chat(user_message, bot_response)
-
-        return jsonify({"reply": bot_response})
-
+        
+        return completion.choices[0].message.content.strip()
+        
     except Exception as e:
-        logger.error(f"❌ Error in /chat: {e}")
-        return jsonify({"error": "Internal error."}), 500
+        logger.error(f"❌ GPT response error: {e}")
+        return "ขออภัยค่ะ ขณะนี้ระบบไม่สามารถตอบได้ กรุณาลองใหม่อีกครั้งค่ะ 🙏"
 
-# ✅ LINE 챗봇 Webhook
-@app.route('/line', methods=['POST'])
-def line_webhook():
+# ✅ LINE 메시지 전송 함수
+def send_line_message(reply_token, message):
+    """LINE API로 메시지 전송"""
     try:
-        body = request.json
-        events = body.get("events", [])
-
-        for event in events:
-            if event.get("type") == "message" and event["message"]["type"] == "text":
-                user_text = event["message"]["text"].strip()
-                reply_token = event["replyToken"]
-                user_id = event["source"]["userId"]
-
-                # 환영 메시지 처리
-                if user_text.lower() in ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม"]:
-                    flex_message = create_welcome_message()
-                    payload = {
-                        "replyToken": reply_token,
-                        "messages": [flex_message]
-                    }
-                else:
-                    # 일반 질문 처리 - OpenAI 클라이언트 확인
-                    if not client:
-                        simple_message = {
-                            "type": "text",
-                            "text": "ขออภัยค่ะ ระบบมีปัญหาชั่วคราว กรุณาลองใหม่อีกครั้งค่ะ 🙏"
-                        }
-                        payload = {
-                            "replyToken": reply_token,
-                            "messages": [simple_message]
-                        }
-                    else:
-                        # GPT 응답 생성
-                        prompt = f"""
-[Product Info]
-{sheet_text[:5000]}
-
-[Company Info]
-{doc_text[:5000]}
-
-[User]
-{user_text}
-"""
-
-                        completion = client.chat.completions.create(
-                            model="gpt-4o",
-                            messages=[
-                                {"role": "system", "content": SYSTEM_MESSAGE},
-                                {"role": "user", "content": prompt}
-                            ],
-                            max_tokens=1000,
-                            temperature=0.7
-                        )
-
-                        bot_response = completion.choices[0].message.content.strip()
-                        flex_message = create_flex_message(bot_response, user_text)
-                        
-                        # Quick Reply 버튼 추가 (특정 키워드에 대해)
-                        if any(keyword in user_text.lower() for keyword in ["ผลิตภัณฑ์", "สินค้า", "ขาย", "มีอะไร"]):
-                            # 제품 관련 질문에는 Quick Reply 추가
-                            payload = {
-                                "replyToken": reply_token,
-                                "messages": [flex_message],
-                                "quickReply": {
-                                    "items": create_quick_reply_buttons()
-                                }
-                            }
-                        else:
-                            payload = {
-                                "replyToken": reply_token,
-                                "messages": [flex_message]
-                            }
-
-                save_chat(user_text, "Flex message sent", user_id)
-
-                # LINE API로 응답 전송
-                line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN") or os.getenv("LINE_TOKEN", "")
-                if not line_token:
-                    logger.error("❌ LINE_CHANNEL_ACCESS_TOKEN not found!")
-                    return "Error: Missing LINE token", 500
-                    
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {line_token}"
-                }
-
-                response = requests.post(
-                    "https://api.line.me/v2/bot/message/reply", 
-                    headers=headers, 
-                    json=payload,
-                    timeout=30
-                )
-                
-                if response.status_code != 200:
-                    logger.error(f"❌ LINE API Error: {response.status_code} - {response.text}")
-                else:
-                    logger.info(f"✅ Message sent successfully to user {user_id}")
-                
-            elif event.get("type") == "postback":
-                # Postback 이벤트 처리
-                postback_data = event["postback"]["data"]
-                reply_token = event["replyToken"]
-                user_id = event["source"]["userId"]
-                
-                handle_postback(postback_data, reply_token, user_id)
-
-        return "OK", 200
-    except Exception as e:
-        logger.error(f"❌ LINE Webhook Error: {e}")
-        import traceback
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        return "Error", 500
-
-def handle_postback(data, reply_token, user_id):
-    """Postback 이벤트 처리"""
-    try:
-        line_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN") or os.getenv("LINE_TOKEN", "")
+        if not LINE_TOKEN:
+            logger.error("❌ LINE_TOKEN not available")
+            return False
+            
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {line_token}"
+            "Authorization": f"Bearer {LINE_TOKEN}"
         }
         
-        if "action=product_inquiry" in data:
-            message = {
-                "type": "text",
-                "text": "มีผลิตภัณฑ์อะไรที่อยากทราบเพิ่มเติมคะ? บอกดิฉันได้เลยค่ะ! 😊\n\nตัวอย่างเช่น:\n• วิธีใช้บาธบอมบ์\n• ผลิตภัณฑ์สำหรับผิวแพ้ง่าย\n• ส่วนประกอบของสบู่\n• ช่องทางการสั่งซื้อ\n• การดูแลผิวหน้า"
-            }
-        elif "action=more_inquiry" in data:
-            message = {
-                "type": "text", 
-                "text": "หากมีคำถามเพิ่มเติม สามารถสอบถามได้ตลอดเวลาค่ะ! 💕\n\nติดต่อเรา:\n📧 saboothailand@gmail.com\n📞 02-159-9880\n🌐 www.saboothailand.com\n\nยินดีให้บริการค่ะ! 😊"
+        # 텍스트 메시지만 전송 (간단하게)
+        if isinstance(message, str):
+            payload = {
+                "replyToken": reply_token,
+                "messages": [{"type": "text", "text": message}]
             }
         else:
-            message = {
-                "type": "text",
-                "text": "ขออภัยค่ะ ดิฉันไม่เข้าใจคำขอนี้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ 😊"
+            payload = {
+                "replyToken": reply_token,
+                "messages": [message]
             }
         
-        payload = {
-            "replyToken": reply_token,
-            "messages": [message]
-        }
-        
-        requests.post(
+        response = requests.post(
             "https://api.line.me/v2/bot/message/reply",
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=10
         )
         
-        save_chat(f"Postback: {data}", f"Response sent", user_id)
-        
+        if response.status_code == 200:
+            logger.info("✅ LINE message sent successfully")
+            return True
+        else:
+            logger.error(f"❌ LINE API error: {response.status_code} - {response.text}")
+            return False
+            
     except Exception as e:
-        logger.error(f"❌ Postback handling error: {e}")
+        logger.error(f"❌ Send LINE message error: {e}")
+        return False
 
-# ✅ 대화 로그 저장 (user_id 포함)
-def save_chat(user_msg, bot_msg, user_id="anonymous"):
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f"[LINE CHAT] {timestamp} | User({user_id}): {user_msg}")
-        logger.info(f"[LINE CHAT] {timestamp} | Bot: {bot_msg}")
-    except Exception as e:
-        logger.error(f"❌ Failed to save chat log: {e}")
+# ✅ 인덱스 라우트
+@app.route('/')
+def index():
+    return "<h1>Saboo Thailand Chatbot is running.</h1>"
 
 # ✅ 헬스체크
 @app.route('/health')
@@ -702,8 +227,130 @@ def health():
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "openai": "connected" if client else "disconnected"
+        "openai": "connected" if client else "disconnected",
+        "line_token": "configured" if LINE_TOKEN else "missing",
+        "line_secret": "configured" if LINE_SECRET else "missing"
     })
+
+# ✅ 웹 챗 라우트
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        user_message = request.json.get('message', '').strip()
+        if not user_message:
+            return jsonify({"error": "Empty message."}), 400
+
+        bot_response = get_gpt_response(user_message)
+        save_chat(user_message, bot_response)
+        
+        return jsonify({"reply": bot_response})
+
+    except Exception as e:
+        logger.error(f"❌ Error in /chat: {e}")
+        return jsonify({"error": "Internal error."}), 500
+
+# ✅ LINE 챗봇 Webhook (수정된 버전)
+@app.route('/line', methods=['POST'])
+def line_webhook():
+    """LINE Webhook 핸들러 - 타임아웃 방지 및 에러 처리 개선"""
+    try:
+        # 1. 요청 데이터 가져오기
+        body = request.get_data(as_text=True)
+        signature = request.headers.get('X-Line-Signature', '')
+        
+        logger.info(f"📨 LINE webhook received: {len(body)} bytes")
+        
+        # 2. 서명 검증 (선택적)
+        if not verify_line_signature(body.encode('utf-8'), signature):
+            logger.warning("⚠️ Invalid signature, but continuing...")
+        
+        # 3. JSON 파싱
+        try:
+            webhook_data = json.loads(body)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON decode error: {e}")
+            return "Invalid JSON", 400
+        
+        events = webhook_data.get("events", [])
+        logger.info(f"📋 Processing {len(events)} events")
+        
+        # 4. 각 이벤트 처리
+        for event in events:
+            try:
+                event_type = event.get("type")
+                logger.info(f"🔄 Processing event type: {event_type}")
+                
+                if event_type == "message" and event.get("message", {}).get("type") == "text":
+                    # 텍스트 메시지 처리
+                    user_text = event["message"]["text"].strip()
+                    reply_token = event["replyToken"]
+                    user_id = event.get("source", {}).get("userId", "unknown")
+                    
+                    logger.info(f"👤 User {user_id}: {user_text}")
+                    
+                    # 환영 메시지 체크
+                    welcome_keywords = ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม"]
+                    
+                    if user_text.lower() in welcome_keywords:
+                        response_text = """สวัสดีค่ะ! 💕 ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ
+
+🧴 เราเป็นผู้ผลิตสบู่ธรรมชาติและผลิตภัณฑ์อาบน้ำครั้งแรกในไทยที่ทำสบู่รูปผลไม้ค่ะ
+
+📍 ร้าน: มิกซ์ จตุจักร ชั้น 2
+📞 โทร: 02-159-9880
+🛒 Shopee: shopee.co.th/thailandsoap
+🌐 เว็บไซต์: www.saboothailand.com
+
+มีอะไรให้ดิฉันช่วยเหลือคะ? 😊"""
+                    else:
+                        # GPT 응답 생성 (타임아웃 고려)
+                        response_text = get_gpt_response(user_text)
+                    
+                    # LINE으로 응답 전송
+                    success = send_line_message(reply_token, response_text)
+                    
+                    if success:
+                        save_chat(user_text, response_text[:100] + "...", user_id)
+                    else:
+                        logger.error(f"❌ Failed to send response to user {user_id}")
+                
+                elif event_type == "follow":
+                    # 친구 추가 이벤트
+                    reply_token = event["replyToken"]
+                    welcome_text = "สวัสดีค่ะ! ขอบคุณที่เพิ่ม SABOO THAILAND เป็นเพื่อนค่ะ 💕\n\nส่งข้อความ 'สวัสดี' เพื่อเริ่มต้นการสนทนาค่ะ 😊"
+                    send_line_message(reply_token, welcome_text)
+                
+                elif event_type == "unfollow":
+                    # 친구 삭제 이벤트 (로그만)
+                    user_id = event.get("source", {}).get("userId", "unknown")
+                    logger.info(f"👋 User {user_id} unfollowed")
+                
+                else:
+                    logger.info(f"ℹ️ Unhandled event type: {event_type}")
+                    
+            except Exception as e:
+                logger.error(f"❌ Error processing event: {e}")
+                continue  # 다음 이벤트 계속 처리
+        
+        # 5. 성공 응답 반환 (중요!)
+        return "OK", 200
+        
+    except Exception as e:
+        logger.error(f"❌ LINE Webhook fatal error: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        
+        # 에러가 있어도 200 반환 (LINE 재시도 방지)
+        return "Error handled", 200
+
+# ✅ 대화 로그 저장
+def save_chat(user_msg, bot_msg, user_id="anonymous"):
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        logger.info(f"💬 [{timestamp}] User({user_id[:8]}): {user_msg[:100]}...")
+        logger.info(f"🤖 [{timestamp}] Bot: {bot_msg[:100]}...")
+    except Exception as e:
+        logger.error(f"❌ Failed to save chat log: {e}")
 
 # ✅ 에러 핸들러
 @app.errorhandler(404)
@@ -720,4 +367,7 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     logger.info(f"🚀 Starting server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)  # ✅ 올바른 코드
+    logger.info(f"🔧 Debug mode: {debug_mode}")
+    logger.info(f"🔑 LINE_TOKEN: {'✅ Set' if LINE_TOKEN else '❌ Missing'}")
+    logger.info(f"🔐 LINE_SECRET: {'✅ Set' if LINE_SECRET else '❌ Missing'}")
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
