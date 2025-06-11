@@ -274,6 +274,59 @@ def chat():
 
         bot_response = completion.choices[0].message.content.strip()
         save_chat(user_message, bot_response)
+@app.route("/line", methods=["POST"])
+def line_webhook():
+    try:
+        body = request.json
+        events = body.get("events", [])
+
+        for event in events:
+            if event.get("type") == "message":
+                user_text = event["message"]["text"]
+                reply_token = event["replyToken"]
+
+                # GPT 응답 생성
+                prompt = f"""
+[Product Information]
+{sheet_text[:5000]}
+
+[Company Information]
+{doc_text[:5000]}
+
+[User Question]
+{user_text}
+"""
+
+                completion = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": SYSTEM_MESSAGE},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=1000,
+                    temperature=0.7
+                )
+
+                bot_response = completion.choices[0].message.content.strip()
+                save_chat(user_text, bot_response)
+
+                # LINE 메시지 전송
+                line_token = os.getenv("LINE_TOKEN", "여기에_토큰을_직접_넣을_수_있음")
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {line_token}"
+                }
+                payload = {
+                    "replyToken": reply_token,
+                    "messages": [{"type": "text", "text": bot_response}]
+                }
+
+                requests.post("https://api.line.me/v2/bot/message/reply", headers=headers, json=payload)
+
+        return "OK", 200
+    except Exception as e:
+        logger.error(f"❌ LINE webhook error: {e}")
+        return "Error", 500
 
         return jsonify({
             "reply": bot_response
