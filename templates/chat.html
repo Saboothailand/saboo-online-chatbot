@@ -564,15 +564,15 @@
         </div>
         
         <div class="loading" id="loading">
-            💬 กำลังตอบคำถาม...
+            💬 Generating response...
         </div>
         
         <div class="input-container">
             <input type="text" id="messageInput" 
-                   placeholder="พิมพ์คำถามของคุณ..." 
+                   placeholder="Type your message here..." 
                    autocomplete="off"
-                   aria-label="พิมพ์ข้อความสำหรับสอบถามข้อมูล Saboo Thailand">
-            <button id="sendButton" aria-label="ส่งข้อความ">ส่ง</button>
+                   aria-label="Type your message to chat with Saboo Thailand">
+            <button id="sendButton" aria-label="Send message">Send</button>
         </div>
     </div>
 
@@ -614,10 +614,10 @@
                         addMessage(data.reply, 'bot', false); // 일반 텍스트로 렌더링
                     }
                 } else {
-                    addMessage('ขออภัยค่ะ เกิดข้อผิดพลาด: ' + (data.error || 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ'), 'bot');
+                    addMessage('Sorry, an error occurred: ' + (data.error || 'Unknown error'), 'bot');
                 }
             } catch (error) {
-                addMessage('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้งค่ะ', 'bot');
+                addMessage('Network error occurred. Please try again.', 'bot');
             } finally {
                 showLoading(false);
                 sendButton.disabled = false;
