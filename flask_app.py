@@ -6,6 +6,7 @@ import os
 import logging
 import requests
 import json
+import re  # 정규식 모듈 추가
 
 # ✅ .env 로드
 load_dotenv()
@@ -118,6 +119,44 @@ SYSTEM_MESSAGE = """
 - ติดต่อ → ให้เบอร์โทรและอีเมล
 """
 
+# ✅ 새로 추가: 하이퍼링크 처리 함수
+def add_hyperlinks(text):
+    """텍스트에서 전화번호와 URL을 하이퍼링크로 변환"""
+    try:
+        # 1. 전화번호 패턴 처리 (한국, 태국 형식)
+        # 예: 02-159-9880, 085-595-9565, 010-1234-5678
+        phone_pattern = r'\b(0\d{1,2}-\d{3,4}-\d{4})\b'
+        text = re.sub(phone_pattern, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 2. 슬래시 없는 전화번호도 처리 (예: 0215999880)
+        phone_pattern2 = r'\b(0\d{9,10})\b'
+        text = re.sub(phone_pattern2, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 3. URL 패턴 처리 (http/https로 시작하는 것)
+        url_pattern = r'(https?://[^\s<>"\']+)'
+        text = re.sub(url_pattern, r'<a href="\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 4. www로 시작하는 도메인 처리
+        www_pattern = r'\b(www\.[^\s<>"\']+)'
+        text = re.sub(www_pattern, r'<a href="https://\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 5. .com, .co.th 등으로 끝나는 도메인 처리 (www 없이)
+        domain_pattern = r'\b([a-zA-Z0-9-]+\.(com|co\.th|net|org|co\.kr))\b'
+        # 이미 링크가 된 것은 제외
+        def replace_domain(match):
+            domain = match.group(1)
+            # 이미 href 안에 있는지 확인
+            if 'href=' in text[max(0, match.start()-20):match.start()]:
+                return domain
+            return f'<a href="https://{domain}" target="_blank" style="color: #ff69b4; text-decoration: underline;">{domain}</a>'
+        
+        text = re.sub(domain_pattern, replace_domain, text)
+        
+        return text
+    except Exception as e:
+        logger.error(f"❌ Hyperlink processing error: {e}")
+        return text
+
 # ✅ LINE 서명 검증 함수
 def verify_line_signature(body, signature):
     """LINE Webhook 서명 검증"""
@@ -167,7 +206,12 @@ def get_gpt_response(user_message):
             timeout=25  # 25초 타임아웃 (LINE 30초 제한)
         )
         
-        return completion.choices[0].message.content.strip()
+        response_text = completion.choices[0].message.content.strip()
+        
+        # ✅ 새로 추가: 하이퍼링크 처리
+        response_text = add_hyperlinks(response_text)
+        
+        return response_text
         
     except Exception as e:
         logger.error(f"❌ GPT response error: {e}")
@@ -232,7 +276,7 @@ def health():
         "line_secret": "configured" if LINE_SECRET else "missing"
     })
 
-# ✅ 웹 챗 라우트
+# ✅ 웹 챗 라우트 (수정됨)
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -243,7 +287,11 @@ def chat():
         bot_response = get_gpt_response(user_message)
         save_chat(user_message, bot_response)
         
-        return jsonify({"reply": bot_response})
+        # ✅ HTML 응답으로 반환 (하이퍼링크 포함)
+        return jsonify({
+            "reply": bot_response,
+            "is_html": True  # 프론트엔드에서 HTML로 렌더링하도록 플래그 추가
+        })
 
     except Exception as e:
         logger.error(f"❌ Error in /chat: {e}")
@@ -302,15 +350,20 @@ def line_webhook():
 🌐 เว็บไซต์: www.saboothailand.com
 
 มีอะไรให้ดิฉันช่วยเหลือคะ? 😊"""
+                        # ✅ 환영 메시지도 하이퍼링크 처리
+                        response_text = add_hyperlinks(response_text)
                     else:
                         # GPT 응답 생성 (타임아웃 고려)
                         response_text = get_gpt_response(user_text)
                     
+                    # LINE은 HTML을 지원하지 않으므로 HTML 태그 제거
+                    clean_response = re.sub(r'<[^>]+>', '', response_text)
+                    
                     # LINE으로 응답 전송
-                    success = send_line_message(reply_token, response_text)
+                    success = send_line_message(reply_token, clean_response)
                     
                     if success:
-                        save_chat(user_text, response_text[:100] + "...", user_id)
+                        save_chat(user_text, clean_response[:100] + "...", user_id)
                     else:
                         logger.error(f"❌ Failed to send response to user {user_id}")
                 
