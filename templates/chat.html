@@ -186,76 +186,7 @@
             color: white;
             padding: 15px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .header-title {
             font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .welcome-messages {
-            margin: 10px 0;
-            min-height: 60px;
-        }
-        
-        .welcome-msg {
-            font-size: 12px;
-            line-height: 1.4;
-            margin: 4px 0;
-            padding: 6px 10px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
-            opacity: 1;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .welcome-msg.english {
-            border-left: 3px solid #4CAF50;
-        }
-        
-        .welcome-msg.thai {
-            border-left: 3px solid #FF9800;
-        }
-        
-        .welcome-msg.hidden {
-            opacity: 0;
-            transform: translateY(-10px);
-            height: 0;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        .language-toggle {
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .lang-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 4px 8px;
-            border-radius: 15px;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .lang-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: scale(1.05);
-        }
-        
-        .lang-btn.active {
-            background: rgba(255,255,255,0.4);
-            border-color: rgba(255,255,255,0.6);
             font-weight: bold;
         }
         
@@ -532,33 +463,16 @@
         
         <div class="chat-header">
             <div class="header-title">Saboo Thailand Chatbot</div>
-            <div class="welcome-messages">
-                <div class="welcome-msg english" id="englishWelcome">
-                    🌟 Welcome to Saboo Thailand - Thailand's First Natural Fruit-Shaped Soap Maker!
-                </div>
-                <div class="welcome-msg thai" id="thaiWelcome">
-                    🧼 ยินดีต้อนรับสู่ Saboo Thailand ผู้ผลิตสบู่ธรรมชาติรูปผลไม้แรกในไทย!
-                </div>
-            </div>
-            <div class="language-toggle">
-                <button class="lang-btn active" data-lang="both">🌏 Both</button>
-                <button class="lang-btn" data-lang="english">🇺🇸 EN</button>
-                <button class="lang-btn" data-lang="thai">🇹🇭 TH</button>
-            </div>
         </div>
         
         <div class="chat-messages" id="chatMessages">
             <div class="message bot-message">
                 <div class="avatar bot-avatar">S</div>
                 <div class="bubble">
-                    <div class="dual-lang-message">
-                        <div class="english-text">
-                            Hello! 👋 Welcome to Saboo Thailand! I'm here to help you with our natural fruit-shaped soaps, bath products, and any questions you have. How can I assist you today?
-                        </div>
-                        <div class="thai-text">
-                            สวัสดีค่ะ! 👋 ยินดีต้อนรับสู่ Saboo Thailand ค่ะ ดิฉันพร้อมให้คำปรึกษาเกี่ยวกับสบู่ธรรมชาติรูปผลไม้ ผลิตภัณฑ์อาบน้ำ และตอบคำถามต่างๆ ค่ะ มีอะไรให้ช่วยคะ?
-                        </div>
-                    </div>
+                    Hello! Welcome to Saboo Thailand.<br>
+                    I'm Saboo Chatbot, your helpful assistant here to answer all your questions.<br>
+                    Ask me about Soaps, Bath Products, Room Sprays, and Home Spa Items.<br>
+                    How can I help you today?
                 </div>
             </div>
         </div>
@@ -667,50 +581,6 @@
             }
         }
 
-        // 언어 토글 기능
-        function initLanguageToggle() {
-            const langButtons = document.querySelectorAll('.lang-btn');
-            const englishWelcome = document.getElementById('englishWelcome');
-            const thaiWelcome = document.getElementById('thaiWelcome');
-            const englishTexts = document.querySelectorAll('.english-text');
-            const thaiTexts = document.querySelectorAll('.thai-text');
-            
-            langButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // 모든 버튼에서 active 클래스 제거
-                    langButtons.forEach(b => b.classList.remove('active'));
-                    // 클릭된 버튼에 active 클래스 추가
-                    btn.classList.add('active');
-                    
-                    const lang = btn.dataset.lang;
-                    
-                    switch(lang) {
-                        case 'both':
-                            // 모든 언어 표시
-                            englishWelcome.classList.remove('hidden');
-                            thaiWelcome.classList.remove('hidden');
-                            englishTexts.forEach(el => el.classList.remove('hidden'));
-                            thaiTexts.forEach(el => el.classList.remove('hidden'));
-                            break;
-                        case 'english':
-                            // 영어만 표시
-                            englishWelcome.classList.remove('hidden');
-                            thaiWelcome.classList.add('hidden');
-                            englishTexts.forEach(el => el.classList.remove('hidden'));
-                            thaiTexts.forEach(el => el.classList.add('hidden'));
-                            break;
-                        case 'thai':
-                            // 태국어만 표시
-                            englishWelcome.classList.add('hidden');
-                            thaiWelcome.classList.remove('hidden');
-                            englishTexts.forEach(el => el.classList.add('hidden'));
-                            thaiTexts.forEach(el => el.classList.remove('hidden'));
-                            break;
-                    }
-                });
-            });
-        }
-
         // Event listeners
         sendButton.addEventListener('click', sendMessage);
         
@@ -721,15 +591,14 @@
             }
         });
 
+        // Focus on input when page loads
+        messageInput.focus();
+        
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            initLanguageToggle();
             messageInput.focus();
             console.log('Saboo Thailand Chatbot loaded successfully');
         });
-
-        // Focus on input when page loads
-        messageInput.focus();
     </script>
 </body>
 </html>
