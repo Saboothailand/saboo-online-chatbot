@@ -263,7 +263,7 @@ def send_line_message(reply_token, message):
 # ✅ 인덱스 라우트
 @app.route('/')
 def index():
-    return "<h1>Saboo Thailand Chatbot is running.</h1>"
+    return render_template('chat.html')  # ✅ 이렇게 수정
 
 # ✅ 헬스체크
 @app.route('/health')
