@@ -197,6 +197,20 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        /* ✅ 에러 메시지 스타일 */
+        .message.bot.error .message-content {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        /* ✅ 폴백 메시지 스타일 */
+        .message.bot.fallback .message-content {
+            background: #e7f3ff;
+            border-color: #74b9ff;
+            color: #0984e3;
+        }
+
         .message.bot .message-content a {
             color: #ff69b4;
             text-decoration: underline;
@@ -273,6 +287,34 @@
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
 
+        /* ✅ 연결 상태 표시기 */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+
+        .connection-status.online {
+            background: #00b894;
+            color: white;
+        }
+
+        .connection-status.offline {
+            background: #e17055;
+            color: white;
+        }
+
+        .connection-status.error {
+            background: #fdcb6e;
+            color: #2d3436;
+        }
+
         @keyframes typing {
             0%, 80%, 100% {
                 transform: scale(0);
@@ -330,10 +372,22 @@
                 width: 110px;
                 height: 35px;
             }
+
+            .connection-status {
+                top: 5px;
+                right: 5px;
+                font-size: 10px;
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- ✅ 연결 상태 표시기 -->
+    <div id="connectionStatus" class="connection-status">
+        Connected
+    </div>
+
     <div class="chat-container">
         <!-- ✅ 로고 섹션 추가 -->
         <div class="logo-section">
@@ -386,54 +440,216 @@
         const chatInput = document.getElementById('chatInput');
         const sendButton = document.getElementById('sendButton');
         const typingIndicator = document.getElementById('typingIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
 
-        // ส่งข้อความ
+        // ✅ 전역 변수
+        let retryCount = 0;
+        let maxRetries = 3;
+        let isOnline = navigator.onLine;
+        let lastUserMessage = '';
+
+        // ✅ 언어 감지 함수
+        function detectLanguage(text) {
+            const thaiPattern = /[\u0E00-\u0E7F]/;
+            const koreanPattern = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
+            
+            if (thaiPattern.test(text)) return 'thai';
+            if (koreanPattern.test(text)) return 'korean';
+            return 'english';
+        }
+
+        // ✅ 영어 폴백 메시지 생성
+        function getEnglishFallbackMessage(error = '') {
+            const messages = [
+                `I apologize, but we're experiencing technical difficulties at the moment. 
+
+Here's some basic information about SABOO THAILAND:
+- We're Thailand's first natural fruit-shaped soap manufacturer since 2008
+- Store location: Mixt Chatuchak, 2nd Floor, Bangkok
+- Phone: 02-159-9880, 085-595-9565
+- Website: www.saboothailand.com
+- Shopee: shopee.co.th/thailandsoap
+
+Please try again later or contact us directly. Thank you for your understanding! 😊`,
+
+                `Sorry for the inconvenience! Our chat system is having temporary issues.
+
+SABOO THAILAND - Quick Info:
+🧼 Natural fruit-shaped soaps since 2008
+🏪 Store: Mixt Chatuchak, 2nd Floor
+📞 Phone: 02-159-9880
+🌐 Website: www.saboothailand.com
+🛒 Online: shopee.co.th/thailandsoap
+
+Feel free to contact us directly for assistance! 💕`,
+
+                `We're currently experiencing some technical problems, but I'd still like to help!
+
+About SABOO THAILAND:
+- Thailand's pioneer in fruit-shaped natural soaps
+- Established 2008, exported to 20+ countries
+- Store: Mixt Chatuchak Mall, 2nd Floor, Bangkok
+- Contact: 02-159-9880 or saboothailand@gmail.com
+
+You can also visit our website or Shopee store for more information! 😊`
+            ];
+            
+            return messages[retryCount % messages.length];
+        }
+
+        // ✅ 연결 상태 업데이트
+        function updateConnectionStatus(status, message = '') {
+            const statusEl = connectionStatus;
+            statusEl.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'online':
+                    statusEl.textContent = '● Connected';
+                    statusEl.style.display = 'none'; // 정상시에는 숨김
+                    break;
+                case 'offline':
+                    statusEl.textContent = '● Offline';
+                    statusEl.style.display = 'block';
+                    break;
+                case 'error':
+                    statusEl.textContent = '● Error';
+                    statusEl.style.display = 'block';
+                    break;
+            }
+            
+            if (status !== 'online') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // ✅ 온라인/오프라인 감지
+        window.addEventListener('online', () => {
+            isOnline = true;
+            updateConnectionStatus('online');
+            retryCount = 0;
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateConnectionStatus('offline');
+        });
+
+        // ✅ 메시지 전송 (개선된 에러 처리)
         async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
 
-            // แสดงข้อความผู้ใช้
+            lastUserMessage = message;
+            const userLanguage = detectLanguage(message);
+
+            // 오프라인 체크
+            if (!isOnline) {
+                addMessage('You appear to be offline. Please check your internet connection and try again.', 'bot', false, 'error');
+                return;
+            }
+
+            // 사용자 메시지 표시
             addMessage(message, 'user');
             chatInput.value = '';
             sendButton.disabled = true;
             
-            // แสดง typing indicator
+            // 타이핑 표시
             showTypingIndicator();
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ message: message }),
+                    signal: controller.signal
                 });
 
-                const data = await response.json();
-                
+                clearTimeout(timeoutId);
                 hideTypingIndicator();
                 
                 if (response.ok) {
-                    // ตรวจสอบว่าเป็น HTML หรือไม่
-                    const isHtml = data.is_html || false;
-                    addMessage(data.reply, 'bot', isHtml);
+                    const data = await response.json();
+                    
+                    // 응답 검증
+                    if (data.reply && data.reply.trim()) {
+                        const isHtml = data.is_html || false;
+                        const messageType = data.error === 'fallback_mode' ? 'fallback' : 'normal';
+                        addMessage(data.reply, 'bot', isHtml, messageType);
+                        retryCount = 0; // 성공시 재시도 카운트 리셋
+                        updateConnectionStatus('online');
+                    } else {
+                        throw new Error('Empty response received');
+                    }
                 } else {
-                    addMessage('Sorry, there was an error. Please try again. 🙏', 'bot');
+                    throw new Error(`Server error: ${response.status}`);
                 }
             } catch (error) {
                 console.error('Error:', error);
                 hideTypingIndicator();
-                addMessage('Sorry, connection failed. Please try again. 🙏', 'bot');
+                handleChatError(error, userLanguage);
             } finally {
                 sendButton.disabled = false;
                 chatInput.focus();
             }
         }
 
-        // เพิ่มข้อความในแชท
-        function addMessage(text, sender, isHtml = false) {
+        // ✅ 채팅 에러 처리
+        function handleChatError(error, userLanguage) {
+            retryCount++;
+            updateConnectionStatus('error');
+            
+            let errorMessage = '';
+            
+            if (error.name === 'AbortError') {
+                errorMessage = 'Request timeout. The server is taking too long to respond.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Network connection failed. Please check your internet connection.';
+            } else if (error.message.includes('Server error: 5')) {
+                errorMessage = 'Server is currently unavailable. Please try again in a few moments.';
+            } else {
+                errorMessage = 'An unexpected error occurred. Please try again.';
+            }
+
+            // 언어별 에러 메시지 (간단한 것만)
+            if (userLanguage === 'thai' && retryCount <= 1) {
+                if (error.name === 'AbortError') {
+                    addMessage('ขออภัยค่ะ ระบบใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้งค่ะ 🙏', 'bot', false, 'error');
+                } else {
+                    addMessage('ขออภัยค่ะ เกิดปัญหาทางเทคนิค กรุณาลองใหม่อีกครั้งค่ะ 🙏', 'bot', false, 'error');
+                }
+            } else {
+                // 영어 폴백 (재시도 횟수가 많거나 기본값)
+                const fallbackMessage = getEnglishFallbackMessage(errorMessage);
+                addMessage(fallbackMessage, 'bot', false, 'fallback');
+            }
+
+            // 재시도 제안
+            if (retryCount <= maxRetries) {
+                setTimeout(() => {
+                    if (lastUserMessage) {
+                        addMessage(`Would you like me to try processing your message "${lastUserMessage}" again? Just click Send or press Enter.`, 'bot', false, 'error');
+                        chatInput.value = lastUserMessage;
+                        chatInput.focus();
+                    }
+                }, 2000);
+            }
+        }
+
+        // ✅ 메시지 추가 (타입 지원)
+        function addMessage(text, sender, isHtml = false, messageType = 'normal') {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
+            
+            if (messageType !== 'normal') {
+                messageDiv.classList.add(messageType);
+            }
             
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
@@ -447,22 +663,21 @@
             messageDiv.appendChild(messageContent);
             chatMessages.appendChild(messageDiv);
             
-            // เลื่อนลงล่างสุด
+            // 스크롤
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // แสดง typing indicator
+        // ✅ 타이핑 표시기 함수들
         function showTypingIndicator() {
             typingIndicator.style.display = 'block';
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // ซ่อน typing indicator
         function hideTypingIndicator() {
             typingIndicator.style.display = 'none';
         }
 
-        // Event listeners
+        // ✅ 이벤트 리스너
         sendButton.addEventListener('click', sendMessage);
         
         chatInput.addEventListener('keypress', (e) => {
@@ -472,17 +687,37 @@
             }
         });
 
-        // เปิดใช้งาน input เมื่อโหลดเสร็จ
+        // ✅ 초기화
         chatInput.focus();
+        updateConnectionStatus('online');
         
-        // ข้อความต้อนรับเริ่มต้น
+        // ✅ 환영 메시지 (개선됨)
         setTimeout(() => {
             const welcomeMsg = document.querySelector('.welcome-message');
             if (welcomeMsg) {
                 welcomeMsg.style.display = 'none';
             }
-            addMessage('Hello! 💕 Welcome to SABOO THAILAND!\n\n🧴 We are Thailand\'s leading manufacturer and distributor of natural soaps and bubble bath home spa products, specializing in unique fruit-shaped soaps.\n\n🌸 Established since 2008 • Exported to 20+ countries\n\nHow can I help you with our premium spa products today? 😊', 'bot');
+            
+            const welcomeText = `Hello! 💕 Welcome to SABOO THAILAND!
+
+🧴 We are Thailand's leading manufacturer and distributor of natural soaps and bubble bath home spa products, specializing in unique fruit-shaped soaps.
+
+🌸 Established since 2008 • Exported to 20+ countries
+
+How can I help you with our premium spa products today? 😊
+
+(💡 You can chat with me in English, Thai, or Korean!)`;
+            
+            addMessage(welcomeText, 'bot');
         }, 1000);
+
+        // ✅ 주기적 연결 상태 체크
+        setInterval(() => {
+            if (navigator.onLine !== isOnline) {
+                isOnline = navigator.onLine;
+                updateConnectionStatus(isOnline ? 'online' : 'offline');
+            }
+        }, 10000);
     </script>
 </body>
 </html>
