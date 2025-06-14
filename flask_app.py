@@ -10,8 +10,6 @@ import re
 import threading
 import time
 import hashlib
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 
 # ✅ .env 로드
 load_dotenv()
@@ -246,24 +244,23 @@ def initialize_google_data():
     logger.info(f"📊 Sheet data length: {len(current_sheet_text)} chars")
     logger.info(f"📄 Doc data length: {len(current_doc_text)} chars")
 
-# ✅ 스케줄러 설정
-def setup_scheduler():
-    """백그라운드 스케줄러 설정"""
-    try:
-        scheduler = BackgroundScheduler(daemon=True)
-        scheduler.add_job(
-            func=check_and_update_google_data,
-            trigger=IntervalTrigger(minutes=UPDATE_INTERVAL_MINUTES),
-            id='google_data_update',
-            name='Check Google Data Updates',
-            replace_existing=True
-        )
-        scheduler.start()
-        logger.info(f"⏰ Scheduler started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
-        return scheduler
-    except Exception as e:
-        logger.error(f"❌ Failed to setup scheduler: {e}")
-        return None
+# ✅ 간단한 백그라운드 업데이트 시스템 (APScheduler 없이)
+def start_background_updater():
+    """APScheduler 없이 간단한 백그라운드 스레드로 업데이트"""
+    def update_worker():
+        while True:
+            try:
+                time.sleep(UPDATE_INTERVAL_MINUTES * 60)  # 분을 초로 변환
+                check_and_update_google_data()
+            except Exception as e:
+                logger.error(f"❌ Background update error: {e}")
+                time.sleep(300)  # 에러 시 5분 대기
+
+    # 백그라운드 스레드 시작
+    update_thread = threading.Thread(target=update_worker, daemon=True)
+    update_thread.start()
+    logger.info(f"⏰ Background updater started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
+    return update_thread
 
 # ✅ GPT 시스템 메시지
 SYSTEM_MESSAGE = """
@@ -763,18 +760,25 @@ def internal_error(error):
     logger.error(f"❌ Internal error: {error}")
     return jsonify({"error": "Server error"}), 500
 
-# ✅ 앱 시작시 초기화
-@app.before_first_request
+# ✅ 앱 시작시 초기화 (Flask 2.x 호환)
 def initialize_app():
-    """앱 첫 요청 전 초기화"""
+    """앱 시작시 초기화"""
     initialize_google_data()
-    setup_scheduler()
+    start_background_updater()
+
+# ✅ Flask 2.x에서 deprecated된 before_first_request 대신 사용
+@app.before_request
+def before_request():
+    """첫 요청 전에 실행"""
+    if not hasattr(app, '_initialized'):
+        initialize_app()
+        app._initialized = True
 
 # ✅ 실행 시작
 if __name__ == '__main__':
     # 앱 시작전 초기화 (개발 환경용)
     initialize_google_data()
-    scheduler = setup_scheduler()
+    background_thread = start_background_updater()
     
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
@@ -791,7 +795,5 @@ if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
     finally:
-        # 앱 종료시 스케줄러 정리
-        if scheduler:
-            scheduler.shutdown()
-            logger.info("🛑 Scheduler shutdown completed")
+        # 앱 종료시 정리 (스레드는 daemon이므로 자동 종료됨)
+        logger.info("🛑 Server shutdown completed")
