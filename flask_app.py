@@ -10,6 +10,10 @@ import re
 import threading
 import time
 import hashlib
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 # ✅ .env 로드
 load_dotenv()
@@ -47,10 +51,11 @@ if not LINE_TOKEN:
 if not LINE_SECRET:
     logger.error("❌ LINE_SECRET or LINE_CHANNEL_SECRET not found!")
 
-# ✅ Google API 설정
+# ✅ Google API 설정 (기존 방식 유지)
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 GOOGLE_DOC_ID = os.getenv("GOOGLE_DOC_ID")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")  # 서비스 계정 JSON
 UPDATE_INTERVAL_MINUTES = int(os.getenv("UPDATE_INTERVAL_MINUTES", "5"))  # 기본 5분마다 체크
 
 # ✅ 전역 변수로 데이터와 해시 저장
@@ -95,31 +100,56 @@ SABOO THAILAND ข้อมูลฉบับสมบูรณ์ - แชท�
 - สครับ ชุดอาบน้ำ
 """
 
-# ✅ Google Sheets API에서 데이터 가져오기
+# ✅ Google Sheets API에서 데이터 가져오기 (gspread 사용)
 def fetch_google_sheet_data():
-    """Google Sheets에서 데이터 가져오기"""
+    """Google Sheets에서 데이터 가져오기 (gspread 또는 REST API)"""
     try:
-        if not GOOGLE_API_KEY or not GOOGLE_SHEET_ID:
-            logger.warning("⚠️ Google Sheets API key or Sheet ID not configured")
-            return None
-            
-        # Google Sheets API URL
-        url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/Sheet1?key={GOOGLE_API_KEY}"
+        # 방법 1: gspread 사용 (서비스 계정 필요)
+        if GOOGLE_CREDENTIALS_JSON:
+            try:
+                import json
+                creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
+                scope = ['https://spreadsheets.google.com/feeds',
+                        'https://www.googleapis.com/auth/drive']
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+                client = gspread.authorize(creds)
+                
+                sheet = client.open_by_key(GOOGLE_SHEET_ID).sheet1
+                all_values = sheet.get_all_values()
+                
+                # 시트 데이터를 텍스트로 변환
+                sheet_content = ""
+                for row in all_values:
+                    sheet_content += " ".join(str(cell) for cell in row if cell) + "\n"
+                
+                logger.info("✅ Google Sheets data fetched via gspread")
+                return sheet_content.strip()
+                
+            except Exception as e:
+                logger.warning(f"⚠️ gspread failed: {e}, trying REST API")
         
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            values = data.get('values', [])
+        # 방법 2: REST API 사용 (API 키 필요)
+        if GOOGLE_API_KEY and GOOGLE_SHEET_ID:
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/Sheet1?key={GOOGLE_API_KEY}"
             
-            # 시트 데이터를 텍스트로 변환
-            sheet_content = ""
-            for row in values:
-                sheet_content += " ".join(str(cell) for cell in row) + "\n"
-            
-            return sheet_content.strip()
-        else:
-            logger.error(f"❌ Google Sheets API error: {response.status_code}")
-            return None
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                values = data.get('values', [])
+                
+                # 시트 데이터를 텍스트로 변환
+                sheet_content = ""
+                for row in values:
+                    sheet_content += " ".join(str(cell) for cell in row if cell) + "\n"
+                
+                logger.info("✅ Google Sheets data fetched via REST API")
+                return sheet_content.strip()
+            else:
+                logger.error(f"❌ Google Sheets REST API error: {response.status_code}")
+                return None
+        
+        logger.warning("⚠️ No Google Sheets credentials or API key configured")
+        return None
             
     except Exception as e:
         logger.error(f"❌ Error fetching Google Sheets data: {e}")
@@ -244,23 +274,24 @@ def initialize_google_data():
     logger.info(f"📊 Sheet data length: {len(current_sheet_text)} chars")
     logger.info(f"📄 Doc data length: {len(current_doc_text)} chars")
 
-# ✅ 간단한 백그라운드 업데이트 시스템 (APScheduler 없이)
-def start_background_updater():
-    """APScheduler 없이 간단한 백그라운드 스레드로 업데이트"""
-    def update_worker():
-        while True:
-            try:
-                time.sleep(UPDATE_INTERVAL_MINUTES * 60)  # 분을 초로 변환
-                check_and_update_google_data()
-            except Exception as e:
-                logger.error(f"❌ Background update error: {e}")
-                time.sleep(300)  # 에러 시 5분 대기
-
-    # 백그라운드 스레드 시작
-    update_thread = threading.Thread(target=update_worker, daemon=True)
-    update_thread.start()
-    logger.info(f"⏰ Background updater started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
-    return update_thread
+# ✅ 스케줄러 설정 (복원)
+def setup_scheduler():
+    """백그라운드 스케줄러 설정"""
+    try:
+        scheduler = BackgroundScheduler(daemon=True)
+        scheduler.add_job(
+            func=check_and_update_google_data,
+            trigger=IntervalTrigger(minutes=UPDATE_INTERVAL_MINUTES),
+            id='google_data_update',
+            name='Check Google Data Updates',
+            replace_existing=True
+        )
+        scheduler.start()
+        logger.info(f"⏰ Scheduler started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
+        return scheduler
+    except Exception as e:
+        logger.error(f"❌ Failed to setup scheduler: {e}")
+        return None
 
 # ✅ GPT 시스템 메시지
 SYSTEM_MESSAGE = """
@@ -561,6 +592,7 @@ def health():
         "line_token": "configured" if LINE_TOKEN else "missing",
         "line_secret": "configured" if LINE_SECRET else "missing",
         "google_api": "configured" if GOOGLE_API_KEY else "missing",
+        "google_credentials": "configured" if GOOGLE_CREDENTIALS_JSON else "missing",
         "google_sheet_id": "configured" if GOOGLE_SHEET_ID else "missing",
         "google_doc_id": "configured" if GOOGLE_DOC_ID else "missing",
         "last_data_update": last_update_time.isoformat(),
@@ -760,25 +792,20 @@ def internal_error(error):
     logger.error(f"❌ Internal error: {error}")
     return jsonify({"error": "Server error"}), 500
 
-# ✅ 앱 시작시 초기화 (Flask 2.x 호환)
-def initialize_app():
-    """앱 시작시 초기화"""
-    initialize_google_data()
-    start_background_updater()
-
-# ✅ Flask 2.x에서 deprecated된 before_first_request 대신 사용
+# ✅ 앱 시작시 초기화 (복원)
 @app.before_request
 def before_request():
-    """첫 요청 전에 실행"""
+    """첫 요청 전에 실행 (Flask 2.x 호환)"""
     if not hasattr(app, '_initialized'):
-        initialize_app()
+        initialize_google_data()
+        setup_scheduler()
         app._initialized = True
 
-# ✅ 실행 시작
+# ✅ 실행 시작 (복원)
 if __name__ == '__main__':
     # 앱 시작전 초기화 (개발 환경용)
     initialize_google_data()
-    background_thread = start_background_updater()
+    scheduler = setup_scheduler()
     
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
@@ -790,10 +817,13 @@ if __name__ == '__main__':
     logger.info(f"📊 Google Sheets ID: {'✅ Set' if GOOGLE_SHEET_ID else '❌ Missing'}")
     logger.info(f"📄 Google Docs ID: {'✅ Set' if GOOGLE_DOC_ID else '❌ Missing'}")
     logger.info(f"🔑 Google API Key: {'✅ Set' if GOOGLE_API_KEY else '❌ Missing'}")
+    logger.info(f"🔐 Google Credentials: {'✅ Set' if GOOGLE_CREDENTIALS_JSON else '❌ Missing'}")
     logger.info(f"⏰ Update interval: {UPDATE_INTERVAL_MINUTES} minutes")
     
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
     finally:
-        # 앱 종료시 정리 (스레드는 daemon이므로 자동 종료됨)
-        logger.info("🛑 Server shutdown completed")
+        # 앱 종료시 스케줄러 정리
+        if scheduler:
+            scheduler.shutdown()
+            logger.info("🛑 Scheduler shutdown completed")
