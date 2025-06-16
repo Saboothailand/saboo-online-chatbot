@@ -51,12 +51,12 @@ if not LINE_TOKEN:
 if not LINE_SECRET:
     logger.error("❌ LINE_SECRET or LINE_CHANNEL_SECRET not found!")
 
-# ✅ Google API 설정 (기존 방식 유지)
+# ✅ Google API 설정
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 GOOGLE_DOC_ID = os.getenv("GOOGLE_DOC_ID")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")  # 서비스 계정 JSON
-UPDATE_INTERVAL_MINUTES = int(os.getenv("UPDATE_INTERVAL_MINUTES", "5"))  # 기본 5분마다 체크
+GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
+UPDATE_INTERVAL_MINUTES = int(os.getenv("UPDATE_INTERVAL_MINUTES", "5"))
 
 # ✅ 전역 변수로 데이터와 해시 저장
 current_sheet_text = ""
@@ -64,6 +64,7 @@ current_doc_text = ""
 sheet_hash = ""
 doc_hash = ""
 last_update_time = datetime.now()
+scheduler = None
 
 # ✅ Google 시트 및 문서 기본 정보
 saboo_thai_info = """
@@ -100,7 +101,7 @@ SABOO THAILAND ข้อมูลฉบับสมบูรณ์ - แชท�
 - สครับ ชุดอาบน้ำ
 """
 
-# ✅ 개선된 Google Sheets API에서 데이터 가져오기
+# ✅ Google Sheets API에서 데이터 가져오기
 def fetch_google_sheet_data():
     """Google Sheets에서 데이터 가져오기 - 개선된 버전"""
     try:
@@ -135,7 +136,6 @@ def fetch_google_sheet_data():
         
         # 방법 2: REST API 사용 (공개 문서인 경우)
         if GOOGLE_API_KEY and GOOGLE_SHEET_ID:
-            # 먼저 범위를 지정하지 않고 시도
             url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/A:Z?key={GOOGLE_API_KEY}"
             
             logger.info(f"🌐 Trying REST API: {url}")
@@ -171,7 +171,7 @@ def fetch_google_sheet_data():
         logger.error(f"❌ Full traceback: {traceback.format_exc()}")
         return None
 
-# ✅ 개선된 Google Docs API에서 데이터 가져오기
+# ✅ Google Docs API에서 데이터 가져오기
 def fetch_google_doc_data():
     """Google Docs에서 데이터 가져오기 - 개선된 버전"""
     try:
@@ -232,9 +232,9 @@ def calculate_hash(data):
         return ""
     return hashlib.md5(data.encode('utf-8')).hexdigest()
 
-# ✅ 개선된 Google 데이터 업데이트 확인 및 갱신
+# ✅ Google 데이터 업데이트 확인 및 갱신
 def check_and_update_google_data():
-    """Google Sheets/Docs 데이터 변경사항 확인 및 업데이트 - 개선된 버전"""
+    """Google Sheets/Docs 데이터 변경사항 확인 및 업데이트"""
     global current_sheet_text, current_doc_text, sheet_hash, doc_hash, last_update_time
     
     try:
@@ -286,9 +286,9 @@ def check_and_update_google_data():
     except Exception as e:
         logger.error(f"❌ Error in check_and_update_google_data: {e}")
 
-# ✅ 개선된 초기 데이터 로드
+# ✅ 초기 데이터 로드
 def initialize_google_data():
-    """앱 시작시 Google 데이터 초기 로드 - 개선된 버전"""
+    """앱 시작시 Google 데이터 초기 로드"""
     global current_sheet_text, current_doc_text, sheet_hash, doc_hash
     
     logger.info("🚀 Initializing Google data...")
@@ -341,17 +341,15 @@ def initialize_google_data():
     logger.info(f"🔒 Sheet hash: {sheet_hash[:10]}...")
     logger.info(f"🔒 Doc hash: {doc_hash[:10]}...")
 
-# ✅ 개선된 스케줄러 설정
+# ✅ 스케줄러 설정
 def setup_scheduler():
-    """백그라운드 스케줄러 설정 - 개선된 버전"""
+    """백그라운드 스케줄러 설정"""
+    global scheduler
     try:
+        if scheduler and scheduler.running:
+            scheduler.shutdown()
+            
         scheduler = BackgroundScheduler(daemon=True)
-        
-        # 기존 작업이 있으면 제거
-        try:
-            scheduler.remove_job('google_data_update')
-        except:
-            pass
         
         scheduler.add_job(
             func=check_and_update_google_data,
@@ -359,12 +357,10 @@ def setup_scheduler():
             id='google_data_update',
             name='Check Google Data Updates',
             replace_existing=True,
-            max_instances=1  # 동시에 하나의 인스턴스만 실행
+            max_instances=1
         )
         
-        if not scheduler.running:
-            scheduler.start()
-            
+        scheduler.start()
         logger.info(f"⏰ Scheduler started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
         
         # 즉시 한 번 실행
@@ -573,7 +569,6 @@ def get_gpt_response(user_message):
         
         if not current_doc_text or len(current_doc_text.strip()) < 20:
             logger.warning("⚠️ Doc data seems insufficient")
-            # 문서 데이터만 부족한 경우는 시트 데이터로 계속 진행
         
         # 최신 데이터 사용
         prompt = f"""
@@ -682,7 +677,8 @@ def health():
         "last_data_update": last_update_time.isoformat(),
         "update_interval_minutes": UPDATE_INTERVAL_MINUTES,
         "sheet_data_length": len(current_sheet_text),
-        "doc_data_length": len(current_doc_text)
+        "doc_data_length": len(current_doc_text),
+        "scheduler_running": scheduler.running if scheduler else False
     })
 
 # ✅ 수동 업데이트 트리거 엔드포인트
@@ -700,13 +696,17 @@ def trigger_update():
             "timestamp": datetime.now().isoformat(),
             "sheet_updated": sheet_hash != old_sheet_hash,
             "doc_updated": doc_hash != old_doc_hash,
-            "last_update": last_update_time.isoformat()
+            "last_update": last_update_time.isoformat(),
+            "old_sheet_hash": old_sheet_hash[:10] + "..." if old_sheet_hash else "None",
+            "new_sheet_hash": sheet_hash[:10] + "..." if sheet_hash else "None",
+            "old_doc_hash": old_doc_hash[:10] + "..." if old_doc_hash else "None", 
+            "new_doc_hash": doc_hash[:10] + "..." if doc_hash else "None"
         })
     except Exception as e:
         logger.error(f"❌ Manual update trigger error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ✅ 디버그용 엔드포인트 추가
+# ✅ 디버그용 엔드포인트
 @app.route('/debug-google-data')
 def debug_google_data():
     """Google 데이터 상태 디버깅"""
@@ -721,20 +721,29 @@ def debug_google_data():
                 "doc_length": len(current_doc_text),
                 "sheet_hash": sheet_hash,
                 "doc_hash": doc_hash,
-                "last_update": last_update_time.isoformat()
+                "last_update": last_update_time.isoformat(),
+                "sheet_preview": current_sheet_text[:300] + "..." if len(current_sheet_text) > 300 else current_sheet_text,
+                "doc_preview": current_doc_text[:300] + "..." if len(current_doc_text) > 300 else current_doc_text
             },
             "fresh_data": {
                 "sheet_length": len(fresh_sheet) if fresh_sheet else 0,
                 "doc_length": len(fresh_doc) if fresh_doc else 0,
-                "sheet_preview": fresh_sheet[:200] if fresh_sheet else "No data",
-                "doc_preview": fresh_doc[:200] if fresh_doc else "No data"
+                "sheet_preview": fresh_sheet[:300] + "..." if fresh_sheet and len(fresh_sheet) > 300 else (fresh_sheet or "No data"),
+                "doc_preview": fresh_doc[:300] + "..." if fresh_doc and len(fresh_doc) > 300 else (fresh_doc or "No data"),
+                "sheet_hash": calculate_hash(fresh_sheet) if fresh_sheet else "None",
+                "doc_hash": calculate_hash(fresh_doc) if fresh_doc else "None"
             },
             "config": {
                 "google_sheet_id": GOOGLE_SHEET_ID[:10] + "..." if GOOGLE_SHEET_ID else None,
                 "google_doc_id": GOOGLE_DOC_ID[:10] + "..." if GOOGLE_DOC_ID else None,
                 "has_api_key": bool(GOOGLE_API_KEY),
                 "has_credentials": bool(GOOGLE_CREDENTIALS_JSON),
-                "update_interval": UPDATE_INTERVAL_MINUTES
+                "update_interval": UPDATE_INTERVAL_MINUTES,
+                "scheduler_running": scheduler.running if scheduler else False
+            },
+            "comparison": {
+                "sheet_data_different": calculate_hash(fresh_sheet) != sheet_hash if fresh_sheet else "Cannot compare",
+                "doc_data_different": calculate_hash(fresh_doc) != doc_hash if fresh_doc else "Cannot compare"
             }
         })
     except Exception as e:
@@ -910,19 +919,27 @@ def internal_error(error):
     logger.error(f"❌ Internal error: {error}")
     return jsonify({"error": "Server error"}), 500
 
-# ✅ 앱 시작시 초기화 수정 (Flask 2.x 호환)
-@app.before_first_request
-def before_first_request():
-    """앱의 첫 번째 요청 전에만 실행"""
-    logger.info("🎯 Running first-time initialization...")
-    initialize_google_data()
-    setup_scheduler()
+# ✅ 앱 시작시 한 번만 초기화 (Flask 2.x+ 호환)
+app_initialized = False
+
+@app.before_request
+def initialize_once():
+    """앱 시작시 한 번만 초기화 실행"""
+    global app_initialized
+    if not app_initialized:
+        logger.info("🎯 Running one-time initialization...")
+        initialize_google_data()
+        setup_scheduler()
+        app_initialized = True
 
 # ✅ 실행 시작
 if __name__ == '__main__':
-    # 앱 시작전 초기화 (개발 환경용)
-    initialize_google_data()
-    scheduler = setup_scheduler()
+    # 개발 환경에서는 직접 초기화
+    if not os.getenv('RAILWAY_ENVIRONMENT'):
+        logger.info("🚀 Development mode - running direct initialization...")
+        initialize_google_data()
+        setup_scheduler()
+        app_initialized = True
     
     port = int(os.environ.get("PORT", 5001))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
@@ -941,6 +958,6 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
     finally:
         # 앱 종료시 스케줄러 정리
-        if scheduler:
+        if scheduler and scheduler.running:
             scheduler.shutdown()
             logger.info("🛑 Scheduler shutdown completed")
