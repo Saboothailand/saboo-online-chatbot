@@ -100,12 +100,10 @@ SABOO THAILAND ข้อมูลฉบับสมบูรณ์ - แชท�
 - สครับ ชุดอาบน้ำ
 """
 
-# ✅ 개선된 Google Sheets API에서 데이터 가져오기
+# ✅ Google Sheets API에서 데이터 가져오기 (gspread 사용)
 def fetch_google_sheet_data():
-    """Google Sheets에서 데이터 가져오기 - 개선된 버전"""
+    """Google Sheets에서 데이터 가져오기 (gspread 또는 REST API)"""
     try:
-        logger.info("🔍 Attempting to fetch Google Sheets data...")
-        
         # 방법 1: gspread 사용 (서비스 계정 필요)
         if GOOGLE_CREDENTIALS_JSON:
             try:
@@ -114,35 +112,27 @@ def fetch_google_sheet_data():
                 scope = ['https://spreadsheets.google.com/feeds',
                         'https://www.googleapis.com/auth/drive']
                 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-                gc = gspread.authorize(creds)
+                client = gspread.authorize(creds)
                 
-                sheet = gc.open_by_key(GOOGLE_SHEET_ID).sheet1
+                sheet = client.open_by_key(GOOGLE_SHEET_ID).sheet1
                 all_values = sheet.get_all_values()
                 
                 # 시트 데이터를 텍스트로 변환
                 sheet_content = ""
                 for row in all_values:
-                    row_text = " | ".join(str(cell) for cell in row if str(cell).strip())
-                    if row_text.strip():
-                        sheet_content += row_text + "\n"
+                    sheet_content += " ".join(str(cell) for cell in row if cell) + "\n"
                 
-                logger.info(f"✅ Google Sheets data fetched via gspread: {len(sheet_content)} chars")
-                logger.info(f"📊 Preview: {sheet_content[:200]}...")
+                logger.info("✅ Google Sheets data fetched via gspread")
                 return sheet_content.strip()
                 
             except Exception as e:
-                logger.error(f"❌ gspread failed: {e}")
+                logger.warning(f"⚠️ gspread failed: {e}, trying REST API")
         
-        # 방법 2: REST API 사용 (공개 문서인 경우)
+        # 방법 2: REST API 사용 (API 키 필요)
         if GOOGLE_API_KEY and GOOGLE_SHEET_ID:
-            # 먼저 범위를 지정하지 않고 시도
-            url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/A:Z?key={GOOGLE_API_KEY}"
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/Sheet1?key={GOOGLE_API_KEY}"
             
-            logger.info(f"🌐 Trying REST API: {url}")
-            response = requests.get(url, timeout=15)
-            
-            logger.info(f"📡 API Response Status: {response.status_code}")
-            
+            response = requests.get(url, timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 values = data.get('values', [])
@@ -150,16 +140,12 @@ def fetch_google_sheet_data():
                 # 시트 데이터를 텍스트로 변환
                 sheet_content = ""
                 for row in values:
-                    row_text = " | ".join(str(cell) for cell in row if str(cell).strip())
-                    if row_text.strip():
-                        sheet_content += row_text + "\n"
+                    sheet_content += " ".join(str(cell) for cell in row if cell) + "\n"
                 
-                logger.info(f"✅ Google Sheets data fetched via REST API: {len(sheet_content)} chars")
-                logger.info(f"📊 Preview: {sheet_content[:200]}...")
+                logger.info("✅ Google Sheets data fetched via REST API")
                 return sheet_content.strip()
             else:
                 logger.error(f"❌ Google Sheets REST API error: {response.status_code}")
-                logger.error(f"❌ Error response: {response.text}")
                 return None
         
         logger.warning("⚠️ No Google Sheets credentials or API key configured")
@@ -167,28 +153,20 @@ def fetch_google_sheet_data():
             
     except Exception as e:
         logger.error(f"❌ Error fetching Google Sheets data: {e}")
-        import traceback
-        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
         return None
 
-# ✅ 개선된 Google Docs API에서 데이터 가져오기
+# ✅ Google Docs API에서 데이터 가져오기
 def fetch_google_doc_data():
-    """Google Docs에서 데이터 가져오기 - 개선된 버전"""
+    """Google Docs에서 데이터 가져오기"""
     try:
-        logger.info("🔍 Attempting to fetch Google Docs data...")
-        
         if not GOOGLE_API_KEY or not GOOGLE_DOC_ID:
             logger.warning("⚠️ Google Docs API key or Doc ID not configured")
             return None
-        
+            
         # Google Docs API URL
         url = f"https://docs.googleapis.com/v1/documents/{GOOGLE_DOC_ID}?key={GOOGLE_API_KEY}"
         
-        logger.info(f"🌐 Trying Docs API: {url}")
-        response = requests.get(url, timeout=15)
-        
-        logger.info(f"📡 Docs API Response Status: {response.status_code}")
-        
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             doc_data = response.json()
             
@@ -205,24 +183,13 @@ def fetch_google_doc_data():
                         text_content = text_run.get('content', '')
                         content += text_content
             
-            logger.info(f"✅ Google Docs data fetched: {len(content)} chars")
-            logger.info(f"📄 Preview: {content[:200]}...")
             return content.strip()
-        elif response.status_code == 403:
-            logger.error("❌ Google Docs API - Access denied. Document might be private or API key lacks permission")
-            logger.error("💡 Make sure the document is publicly accessible or use service account credentials")
-        elif response.status_code == 404:
-            logger.error("❌ Google Docs API - Document not found. Check GOOGLE_DOC_ID")
         else:
             logger.error(f"❌ Google Docs API error: {response.status_code}")
-            logger.error(f"❌ Error response: {response.text}")
-        
-        return None
+            return None
             
     except Exception as e:
         logger.error(f"❌ Error fetching Google Docs data: {e}")
-        import traceback
-        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
         return None
 
 # ✅ 데이터 해시 계산
@@ -232,63 +199,42 @@ def calculate_hash(data):
         return ""
     return hashlib.md5(data.encode('utf-8')).hexdigest()
 
-# ✅ 개선된 Google 데이터 업데이트 확인 및 갱신
+# ✅ Google 데이터 업데이트 확인 및 갱신
 def check_and_update_google_data():
-    """Google Sheets/Docs 데이터 변경사항 확인 및 업데이트 - 개선된 버전"""
+    """Google Sheets/Docs 데이터 변경사항 확인 및 업데이트"""
     global current_sheet_text, current_doc_text, sheet_hash, doc_hash, last_update_time
     
     try:
         logger.info("🔄 Checking for Google data updates...")
-        update_occurred = False
         
         # Sheets 데이터 확인
-        try:
-            new_sheet_data = fetch_google_sheet_data()
-            if new_sheet_data and len(new_sheet_data.strip()) > 50:
-                new_sheet_hash = calculate_hash(new_sheet_data)
-                if new_sheet_hash != sheet_hash:
-                    logger.info("📊 Google Sheets data updated!")
-                    logger.info(f"📊 Old hash: {sheet_hash[:10]}... New hash: {new_sheet_hash[:10]}...")
-                    current_sheet_text = new_sheet_data
-                    sheet_hash = new_sheet_hash
-                    update_occurred = True
-                else:
-                    logger.info("📊 Google Sheets data unchanged")
-            else:
-                logger.warning("⚠️ Google Sheets data fetch failed or insufficient")
-        except Exception as e:
-            logger.error(f"❌ Error checking Google Sheets: {e}")
+        new_sheet_data = fetch_google_sheet_data()
+        if new_sheet_data:
+            new_sheet_hash = calculate_hash(new_sheet_data)
+            if new_sheet_hash != sheet_hash:
+                logger.info("📊 Google Sheets data updated!")
+                current_sheet_text = new_sheet_data
+                sheet_hash = new_sheet_hash
+                last_update_time = datetime.now()
         
         # Docs 데이터 확인
-        try:
-            new_doc_data = fetch_google_doc_data()
-            if new_doc_data and len(new_doc_data.strip()) > 20:
-                new_doc_hash = calculate_hash(new_doc_data)
-                if new_doc_hash != doc_hash:
-                    logger.info("📄 Google Docs data updated!")
-                    logger.info(f"📄 Old hash: {doc_hash[:10]}... New hash: {new_doc_hash[:10]}...")
-                    current_doc_text = new_doc_data
-                    doc_hash = new_doc_hash
-                    update_occurred = True
-                else:
-                    logger.info("📄 Google Docs data unchanged")
-            else:
-                logger.warning("⚠️ Google Docs data fetch failed or insufficient")
-        except Exception as e:
-            logger.error(f"❌ Error checking Google Docs: {e}")
+        new_doc_data = fetch_google_doc_data()
+        if new_doc_data:
+            new_doc_hash = calculate_hash(new_doc_data)
+            if new_doc_hash != doc_hash:
+                logger.info("📄 Google Docs data updated!")
+                current_doc_text = new_doc_data
+                doc_hash = new_doc_hash
+                last_update_time = datetime.now()
         
-        if update_occurred:
-            last_update_time = datetime.now()
-            logger.info(f"✅ Data update completed at {last_update_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        else:
-            logger.info(f"ℹ️ No data changes detected at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"✅ Google data check completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
     except Exception as e:
-        logger.error(f"❌ Error in check_and_update_google_data: {e}")
+        logger.error(f"❌ Error checking Google data updates: {e}")
 
-# ✅ 개선된 초기 데이터 로드
+# ✅ 초기 데이터 로드
 def initialize_google_data():
-    """앱 시작시 Google 데이터 초기 로드 - 개선된 버전"""
+    """앱 시작시 Google 데이터 초기 로드"""
     global current_sheet_text, current_doc_text, sheet_hash, doc_hash
     
     logger.info("🚀 Initializing Google data...")
@@ -296,13 +242,6 @@ def initialize_google_data():
     # 기본값 설정
     current_sheet_text = saboo_thai_info
     current_doc_text = "ข้อมูลเพิ่มเติมเกี่ยวกับ SABOO THAILAND"
-    
-    # 환경 변수 확인 및 로그
-    logger.info(f"🔧 Environment check:")
-    logger.info(f"   - GOOGLE_SHEET_ID: {'✅' if GOOGLE_SHEET_ID else '❌'}")
-    logger.info(f"   - GOOGLE_DOC_ID: {'✅' if GOOGLE_DOC_ID else '❌'}")
-    logger.info(f"   - GOOGLE_API_KEY: {'✅' if GOOGLE_API_KEY else '❌'}")
-    logger.info(f"   - GOOGLE_CREDENTIALS_JSON: {'✅' if GOOGLE_CREDENTIALS_JSON else '❌'}")
     
     try:
         # chatbot_utils 시도
@@ -321,56 +260,34 @@ def initialize_google_data():
     sheet_data = fetch_google_sheet_data()
     if sheet_data and len(sheet_data.strip()) > 50:
         current_sheet_text = sheet_data
-        logger.info("✅ Google Sheets data loaded successfully")
-    else:
-        logger.warning("⚠️ Using fallback sheet data")
+        logger.info("✅ Google Sheets data loaded")
     
     doc_data = fetch_google_doc_data()
-    if doc_data and len(doc_data.strip()) > 20:
+    if doc_data and len(doc_data.strip()) > 50:
         current_doc_text = doc_data
-        logger.info("✅ Google Docs data loaded successfully")
-    else:
-        logger.warning("⚠️ Using fallback doc data")
+        logger.info("✅ Google Docs data loaded")
     
     # 초기 해시 계산
     sheet_hash = calculate_hash(current_sheet_text)
     doc_hash = calculate_hash(current_doc_text)
     
-    logger.info(f"📊 Final sheet data length: {len(current_sheet_text)} chars")
-    logger.info(f"📄 Final doc data length: {len(current_doc_text)} chars")
-    logger.info(f"🔒 Sheet hash: {sheet_hash[:10]}...")
-    logger.info(f"🔒 Doc hash: {doc_hash[:10]}...")
+    logger.info(f"📊 Sheet data length: {len(current_sheet_text)} chars")
+    logger.info(f"📄 Doc data length: {len(current_doc_text)} chars")
 
-# ✅ 개선된 스케줄러 설정
+# ✅ 스케줄러 설정 (복원)
 def setup_scheduler():
-    """백그라운드 스케줄러 설정 - 개선된 버전"""
+    """백그라운드 스케줄러 설정"""
     try:
         scheduler = BackgroundScheduler(daemon=True)
-        
-        # 기존 작업이 있으면 제거
-        try:
-            scheduler.remove_job('google_data_update')
-        except:
-            pass
-        
         scheduler.add_job(
             func=check_and_update_google_data,
             trigger=IntervalTrigger(minutes=UPDATE_INTERVAL_MINUTES),
             id='google_data_update',
             name='Check Google Data Updates',
-            replace_existing=True,
-            max_instances=1  # 동시에 하나의 인스턴스만 실행
+            replace_existing=True
         )
-        
-        if not scheduler.running:
-            scheduler.start()
-            
+        scheduler.start()
         logger.info(f"⏰ Scheduler started - checking every {UPDATE_INTERVAL_MINUTES} minutes")
-        
-        # 즉시 한 번 실행
-        logger.info("🚀 Running initial data check...")
-        check_and_update_google_data()
-        
         return scheduler
     except Exception as e:
         logger.error(f"❌ Failed to setup scheduler: {e}")
@@ -502,7 +419,6 @@ SABOO THAILAND - Basic Information:
 Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
 
 Please contact us directly or try again later. Thank you! 😊"""
-
 def add_hyperlinks(text):
     """텍스트에서 전화번호와 URL을 하이퍼링크로 변환"""
     try:
@@ -706,40 +622,6 @@ def trigger_update():
         logger.error(f"❌ Manual update trigger error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ✅ 디버그용 엔드포인트 추가
-@app.route('/debug-google-data')
-def debug_google_data():
-    """Google 데이터 상태 디버깅"""
-    try:
-        # 실시간으로 데이터 가져오기 시도
-        fresh_sheet = fetch_google_sheet_data()
-        fresh_doc = fetch_google_doc_data()
-        
-        return jsonify({
-            "current_data": {
-                "sheet_length": len(current_sheet_text),
-                "doc_length": len(current_doc_text),
-                "sheet_hash": sheet_hash,
-                "doc_hash": doc_hash,
-                "last_update": last_update_time.isoformat()
-            },
-            "fresh_data": {
-                "sheet_length": len(fresh_sheet) if fresh_sheet else 0,
-                "doc_length": len(fresh_doc) if fresh_doc else 0,
-                "sheet_preview": fresh_sheet[:200] if fresh_sheet else "No data",
-                "doc_preview": fresh_doc[:200] if fresh_doc else "No data"
-            },
-            "config": {
-                "google_sheet_id": GOOGLE_SHEET_ID[:10] + "..." if GOOGLE_SHEET_ID else None,
-                "google_doc_id": GOOGLE_DOC_ID[:10] + "..." if GOOGLE_DOC_ID else None,
-                "has_api_key": bool(GOOGLE_API_KEY),
-                "has_credentials": bool(GOOGLE_CREDENTIALS_JSON),
-                "update_interval": UPDATE_INTERVAL_MINUTES
-            }
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 # ✅ 웹 챗 라우트 (영어 폴백 지원)
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -910,15 +792,16 @@ def internal_error(error):
     logger.error(f"❌ Internal error: {error}")
     return jsonify({"error": "Server error"}), 500
 
-# ✅ 앱 시작시 초기화 수정 (Flask 2.x 호환)
-@app.before_first_request
-def before_first_request():
-    """앱의 첫 번째 요청 전에만 실행"""
-    logger.info("🎯 Running first-time initialization...")
-    initialize_google_data()
-    setup_scheduler()
+# ✅ 앱 시작시 초기화 (복원)
+@app.before_request
+def before_request():
+    """첫 요청 전에 실행 (Flask 2.x 호환)"""
+    if not hasattr(app, '_initialized'):
+        initialize_google_data()
+        setup_scheduler()
+        app._initialized = True
 
-# ✅ 실행 시작
+# ✅ 실행 시작 (복원)
 if __name__ == '__main__':
     # 앱 시작전 초기화 (개발 환경용)
     initialize_google_data()
