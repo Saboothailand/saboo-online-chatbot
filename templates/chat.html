@@ -76,7 +76,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ff69b4, #ff1493, #dc143c);
+            /* ✅ #ea6ea1 베이스 그라디언트로 변경 */
+            background: linear-gradient(135deg, #ea6ea1, #f48fb1, #f8bbd9, #fce4ec);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -87,7 +88,7 @@
         .chat-container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
             width: 100%;
             max-width: 800px;
             height: 600px;
@@ -140,7 +141,8 @@
         }
 
         .chat-header {
-            background: linear-gradient(90deg, #ff69b4, #ff1493);
+            /* ✅ 헤더도 #ea6ea1과 조화되도록 조정 */
+            background: linear-gradient(90deg, #ea6ea1, #e91e63);
             color: white;
             padding: 20px;
             text-align: center;
@@ -161,7 +163,7 @@
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            background: #f8f9fa;
+            background: #fafafa;
         }
 
         .message {
@@ -184,7 +186,8 @@
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            /* ✅ 사용자 메시지도 #ea6ea1과 매칭 */
+            background: linear-gradient(135deg, #ea6ea1, #e91e63);
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -212,7 +215,7 @@
         }
 
         .message.bot .message-content a {
-            color: #ff69b4;
+            color: #ea6ea1;
             text-decoration: underline;
         }
 
@@ -235,12 +238,13 @@
         }
 
         .chat-input:focus {
-            border-color: #ff69b4;
+            border-color: #ea6ea1;
         }
 
         .send-button {
             padding: 12px 20px;
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            /* ✅ 버튼도 #ea6ea1 베이스로 */
+            background: linear-gradient(135deg, #ea6ea1, #e91e63);
             color: white;
             border: none;
             border-radius: 25px;
@@ -277,7 +281,7 @@
         .typing-dots span {
             height: 8px;
             width: 8px;
-            background: #ff69b4;
+            background: #ea6ea1;
             border-radius: 50%;
             display: inline-block;
             margin: 0 2px;
@@ -398,7 +402,7 @@
                          alt="Saboo Thailand Logo - Natural Soap & Home Spa Products" 
                          class="logo-image"
                          loading="lazy"
-                         onerror="this.onerror=null; this.src='https://www.saboothailand.com/images/saboo-logo.png'; if(this.complete && this.naturalHeight === 0) { this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ff69b4;font-size:18px;font-weight:bold;text-decoration:none;\'>🧼 SABOO THAILAND</div>'; }">
+                         onerror="this.onerror=null; this.src='https://www.saboothailand.com/images/saboo-logo.png'; if(this.complete && this.naturalHeight === 0) { this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ea6ea1;font-size:18px;font-weight:bold;text-decoration:none;\'>🧼 SABOO THAILAND</div>'; }">
                 </a>
             </div>
         </div>
