@@ -43,7 +43,7 @@ except Exception as e:
 
 # ✅ LINE 설정 확인
 LINE_TOKEN = os.getenv("LINE_TOKEN") or os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_SECRET = os.getenv("LINE_SECRET") or os.getenv("LINE_CHANNEL_SECRET")
+LINE_SECRET = os.getenv("LINE_CHANNEL_SECRET") or os.getenv("LINE_SECRET")
 
 if not LINE_TOKEN:
     logger.error("❌ LINE_TOKEN or LINE_CHANNEL_ACCESS_TOKEN not found!")
