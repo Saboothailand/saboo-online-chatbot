@@ -430,41 +430,6 @@ def detect_user_language(message):
         logger.error(f"❌ Language detection error: {e}")
         return 'english'  # 에러 시 영어로 폴백
 
-# ✅ 하이퍼링크 추가 함수
-def add_hyperlinks(text):
-    """텍스트에서 전화번호와 URL을 하이퍼링크로 변환"""
-    try:
-        # 1. 전화번호 패턴 처리 (한국, 태국 형식)
-        phone_pattern = r'\b(0\d{1,2}-\d{3,4}-\d{4})\b'
-        text = re.sub(phone_pattern, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
-        
-        # 2. 슬래시 없는 전화번호도 처리
-        phone_pattern2 = r'\b(0\d{9,10})\b'
-        text = re.sub(phone_pattern2, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
-        
-        # 3. URL 패턴 처리
-        url_pattern = r'(https?://[^\s<>"\']+)'
-        text = re.sub(url_pattern, r'<a href="\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
-        
-        # 4. www로 시작하는 도메인 처리
-        www_pattern = r'\b(www\.[^\s<>"\']+)'
-        text = re.sub(www_pattern, r'<a href="https://\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
-        
-        # 5. .com, .co.th 등으로 끝나는 도메인 처리
-        domain_pattern = r'\b([a-zA-Z0-9-]+\.(com|co\.th|net|org|co\.kr))\b'
-        def replace_domain(match):
-            domain = match.group(1)
-            if 'href=' in text[max(0, match.start()-20):match.start()]:
-                return domain
-            return f'<a href="https://{domain}" target="_blank" style="color: #ff69b4; text-decoration: underline;">{domain}</a>'
-        
-        text = re.sub(domain_pattern, replace_domain, text)
-        
-        return text
-    except Exception as e:
-        logger.error(f"❌ Hyperlink processing error: {e}")
-        return text
-
 # ✅ 영어 폴백 응답 생성
 def get_english_fallback_response(user_message, error_context=""):
     """문제 발생 시 영어로 폴백 응답 생성"""
@@ -886,8 +851,7 @@ if __name__ == '__main__':
         # 앱 종료시 스케줄러 정리
         if scheduler and scheduler.running:
             scheduler.shutdown()
-            logger.info("🛑 Scheduler shutdown completed")fallback_response(user_message, "Response generation issue")
-        
+            logger.info("🛑 Scheduler shutdown completed") completion.choices[0].message.content.strip()
         response_text = add_hyperlinks(response_text)
         
         # 기술적 문제 안내 추가
@@ -911,6 +875,40 @@ SABOO THAILAND - Basic Information:
 Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
 
 Please contact us directly or try again later. Thank you! 😊"""
+
+def add_hyperlinks(text):
+    """텍스트에서 전화번호와 URL을 하이퍼링크로 변환"""
+    try:
+        # 1. 전화번호 패턴 처리 (한국, 태국 형식)
+        phone_pattern = r'\b(0\d{1,2}-\d{3,4}-\d{4})\b'
+        text = re.sub(phone_pattern, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 2. 슬래시 없는 전화번호도 처리
+        phone_pattern2 = r'\b(0\d{9,10})\b'
+        text = re.sub(phone_pattern2, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 3. URL 패턴 처리
+        url_pattern = r'(https?://[^\s<>"\']+)'
+        text = re.sub(url_pattern, r'<a href="\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 4. www로 시작하는 도메인 처리
+        www_pattern = r'\b(www\.[^\s<>"\']+)'
+        text = re.sub(www_pattern, r'<a href="https://\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # 5. .com, .co.th 등으로 끝나는 도메인 처리
+        domain_pattern = r'\b([a-zA-Z0-9-]+\.(com|co\.th|net|org|co\.kr))\b'
+        def replace_domain(match):
+            domain = match.group(1)
+            if 'href=' in text[max(0, match.start()-20):match.start()]:
+                return domain
+            return f'<a href="https://{domain}" target="_blank" style="color: #ff69b4; text-decoration: underline;">{domain}</a>'
+        
+        text = re.sub(domain_pattern, replace_domain, text)
+        
+        return text
+    except Exception as e:
+        logger.error(f"❌ Hyperlink processing error: {e}")
+        return text
 
 # ✅ LINE 서명 검증 함수
 def verify_line_signature(body, signature):
@@ -970,9 +968,4 @@ def get_gpt_response(user_message):
             timeout=25
         )
         
-        response_text = completion.choices[0].message.content.strip()
-        
-        # 응답 품질 검사
-        if not response_text or len(response_text.strip()) < 10:
-            logger.warning("⚠️ Generated response seems too short")
-            return get_english_
+        response_text =
