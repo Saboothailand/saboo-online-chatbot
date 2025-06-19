@@ -848,11 +848,11 @@ if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
     finally:
-        # 앱 종료시 스케줄러 정리
-        if scheduler and scheduler.running:
-            scheduler.shutdown()
-            logger.info("🛑 Scheduler shutdown completed") completion.choices[0].message.content.strip()
-        response_text = add_hyperlinks(response_text)
+    if scheduler and scheduler.running:
+        scheduler.shutdown()
+        logger.info("🛑 Scheduler shutdown completed")
+
+        
         
         # 기술적 문제 안내 추가
         if error_context:
