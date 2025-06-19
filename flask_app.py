@@ -14,7 +14,399 @@ import socket
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-# ✅ .env 로드
+# ✅ LINE 메시지 전송 함수
+def send_line_message(reply_token, message):
+    """LINE API로 메시지 전송"""
+    try:
+        if not LINE_TOKEN:
+            logger.error("❌ LINE_TOKEN not available")
+            return False
+            
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LINE_TOKEN}"
+        }
+        
+        if isinstance(message, str):
+            payload = {
+                "replyToken": reply_token,
+                "messages": [{"type": "text", "text": message}]
+            }
+        else:
+            payload = {
+                "replyToken": reply_token,
+                "messages": [message]
+            }
+        
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            logger.info("✅ LINE message sent successfully")
+            return True
+        else:
+            logger.error(f"❌ LINE API error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Send LINE message error: {e}")
+        return False
+
+# ✅ 인덱스 라우트
+@app.route('/')
+def index():
+    try:
+        return render_template('chat.html')
+    except Exception as e:
+        logger.error(f"❌ Error rendering index: {e}")
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>SABOO THAILAND Chatbot</title></head>
+        <body>
+            <h1>SABOO THAILAND Chatbot</h1>
+            <p>Service is temporarily unavailable. Please try again later.</p>
+        </body>
+        </html>
+        """
+
+# ✅ 헬스체크 (업데이트 정보 포함)
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "openai": "connected" if client else "disconnected",
+        "line_token": "configured" if LINE_TOKEN else "missing",
+        "line_secret": "configured" if LINE_SECRET else "missing",
+        "google_api": "configured" if GOOGLE_API_KEY else "missing",
+        "google_credentials": "configured" if GOOGLE_CREDENTIALS_JSON else "missing",
+        "google_sheet_id": "configured" if GOOGLE_SHEET_ID else "missing",
+        "google_doc_id": "configured" if GOOGLE_DOC_ID else "missing",
+        "last_data_update": last_update_time.isoformat(),
+        "update_interval_minutes": UPDATE_INTERVAL_MINUTES,
+        "sheet_data_length": len(current_sheet_text),
+        "doc_data_length": len(current_doc_text),
+        "scheduler_running": scheduler.running if scheduler else False
+    })
+
+# ✅ 수동 업데이트 트리거 엔드포인트
+@app.route('/trigger-update')
+def trigger_update():
+    """수동으로 데이터 업데이트 트리거"""
+    try:
+        old_sheet_hash = sheet_hash
+        old_doc_hash = doc_hash
+        
+        check_and_update_google_data()
+        
+        return jsonify({
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "sheet_updated": sheet_hash != old_sheet_hash,
+            "doc_updated": doc_hash != old_doc_hash,
+            "last_update": last_update_time.isoformat(),
+            "old_sheet_hash": old_sheet_hash[:10] + "..." if old_sheet_hash else "None",
+            "new_sheet_hash": sheet_hash[:10] + "..." if sheet_hash else "None",
+            "old_doc_hash": old_doc_hash[:10] + "..." if old_doc_hash else "None", 
+            "new_doc_hash": doc_hash[:10] + "..." if doc_hash else "None"
+        })
+    except Exception as e:
+        logger.error(f"❌ Manual update trigger error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ✅ 디버그용 엔드포인트
+@app.route('/debug-data')
+def debug_data():
+    """데이터 상태 디버깅"""
+    try:
+        # 실시간으로 데이터 가져오기 시도
+        fresh_sheet = fetch_google_sheet_data()
+        fresh_doc = fetch_google_doc_data()
+        
+        return jsonify({
+            "current_data": {
+                "sheet_length": len(current_sheet_text),
+                "doc_length": len(current_doc_text),
+                "sheet_hash": sheet_hash,
+                "doc_hash": doc_hash,
+                "last_update": last_update_time.isoformat(),
+                "sheet_preview": current_sheet_text[:300] + "..." if len(current_sheet_text) > 300 else current_sheet_text,
+                "doc_preview": current_doc_text[:300] + "..." if len(current_doc_text) > 300 else current_doc_text
+            },
+            "fresh_data": {
+                "sheet_length": len(fresh_sheet) if fresh_sheet else 0,
+                "doc_length": len(fresh_doc) if fresh_doc else 0,
+                "sheet_preview": fresh_sheet[:300] + "..." if fresh_sheet and len(fresh_sheet) > 300 else (fresh_sheet or "No data"),
+                "doc_preview": fresh_doc[:300] + "..." if fresh_doc and len(fresh_doc) > 300 else (fresh_doc or "No data"),
+                "sheet_hash": calculate_hash(fresh_sheet) if fresh_sheet else "None",
+                "doc_hash": calculate_hash(fresh_doc) if fresh_doc else "None"
+            },
+            "config": {
+                "google_sheet_id": GOOGLE_SHEET_ID[:10] + "..." if GOOGLE_SHEET_ID else None,
+                "google_doc_id": GOOGLE_DOC_ID[:10] + "..." if GOOGLE_DOC_ID else None,
+                "has_api_key": bool(GOOGLE_API_KEY),
+                "has_credentials": bool(GOOGLE_CREDENTIALS_JSON),
+                "update_interval": UPDATE_INTERVAL_MINUTES,
+                "scheduler_running": scheduler.running if scheduler else False
+            },
+            "comparison": {
+                "sheet_data_different": calculate_hash(fresh_sheet) != sheet_hash if fresh_sheet else "Cannot compare",
+                "doc_data_different": calculate_hash(fresh_doc) != doc_hash if fresh_doc else "Cannot compare"
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ✅ 웹 챗 라우트 (영어 폴백 지원)
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        user_message = request.json.get('message', '').strip()
+        if not user_message:
+            return jsonify({"error": "Empty message."}), 400
+
+        # 응답 생성 (내부적으로 영어 폴백 처리됨)
+        bot_response = get_gpt_response(user_message)
+        save_chat(user_message, bot_response)
+        
+        return jsonify({
+            "reply": bot_response,
+            "is_html": True,
+            "last_data_update": last_update_time.isoformat(),
+            "user_language": detect_user_language(user_message)
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Error in /chat: {e}")
+        # 웹 챗 에러 시에도 영어 폴백
+        fallback_response = get_english_fallback_response(
+            user_message if 'user_message' in locals() else "general inquiry", 
+            f"Web chat system error: {str(e)[:100]}"
+        )
+        return jsonify({
+            "reply": fallback_response,
+            "is_html": True,
+            "error": "fallback_mode"
+        })
+
+# ✅ LINE 챗봇 Webhook
+@app.route('/line', methods=['POST'])
+def line_webhook():
+    """LINE Webhook 핸들러"""
+    try:
+        body = request.get_data(as_text=True)
+        signature = request.headers.get('X-Line-Signature', '')
+        
+        logger.info(f"📨 LINE webhook received: {len(body)} bytes")
+        
+        if not verify_line_signature(body.encode('utf-8'), signature):
+            logger.warning("⚠️ Invalid signature, but continuing...")
+        
+        try:
+            webhook_data = json.loads(body)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON decode error: {e}")
+            return "Invalid JSON", 400
+        
+        events = webhook_data.get("events", [])
+        logger.info(f"📋 Processing {len(events)} events")
+        
+        for event in events:
+            try:
+                event_type = event.get("type")
+                logger.info(f"🔄 Processing event type: {event_type}")
+                
+                if event_type == "message" and event.get("message", {}).get("type") == "text":
+                    user_text = event["message"]["text"].strip()
+                    reply_token = event["replyToken"]
+                    user_id = event.get("source", {}).get("userId", "unknown")
+                    
+                    logger.info(f"👤 User {user_id}: {user_text}")
+                    
+                    welcome_keywords = ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม"]
+                    
+                    if user_text.lower() in welcome_keywords:
+                        # 환영 메시지도 언어별로 처리
+                        user_lang = detect_user_language(user_text)
+                        
+                        if user_lang == 'thai':
+                            response_text = """สวัสดีค่ะ! 💕 ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ
+
+🧴 เราเป็นผู้ผลิตสบู่ธรรมชาติและผลิตภัณฑ์อาบน้ำครั้งแรกในไทยที่ทำสบู่รูปผลไม้ค่ะ
+
+📍 ร้าน: มิกซ์ จตุจักร ชั้น 2
+📞 โทร: 02-159-9880
+🛒 Shopee: shopee.co.th/thailandsoap
+🌐 เว็บไซต์: www.saboothailand.com
+
+มีอะไรให้ดิฉันช่วยเหลือคะ? 😊"""
+                        elif user_lang == 'korean':
+                            response_text = """안녕하세요! 💕 SABOO THAILAND에 오신 것을 환영합니다!
+
+🧴 저희는 태국 최초로 과일 모양 천연 비누를 만드는 회사입니다
+
+📍 매장: 믹스 짜뚜짝, 2층
+📞 전화: 02-159-9880
+🛒 쇼피: shopee.co.th/thailandsoap
+🌐 웹사이트: www.saboothailand.com
+
+무엇을 도와드릴까요? 😊"""
+                        else:  # English
+                            response_text = """Hello! 💕 Welcome to SABOO THAILAND!
+
+🧴 We are Thailand's first company to create fruit-shaped natural soaps and bath products
+
+📍 Store: Mixt Chatuchak, 2nd Floor
+📞 Phone: 02-159-9880
+🛒 Shopee: shopee.co.th/thailandsoap
+🌐 Website: www.saboothailand.com
+
+How can I help you today? 😊"""
+                        
+                        response_text = add_hyperlinks(response_text)
+                    else:
+                        response_text = get_gpt_response(user_text)
+                    
+                    # LINE은 HTML을 지원하지 않으므로 HTML 태그 제거
+                    clean_response = re.sub(r'<[^>]+>', '', response_text)
+                    
+                    success = send_line_message(reply_token, clean_response)
+                    
+                    if success:
+                        save_chat(user_text, clean_response[:100] + "...", user_id)
+                    else:
+                        logger.error(f"❌ Failed to send response to user {user_id}")
+                
+                elif event_type == "follow":
+                    reply_token = event["replyToken"]
+                    # 친구 추가도 영어 폴백 지원
+                    try:
+                        welcome_text = "สวัสดีค่ะ! ขอบคุณที่เพิ่ม SABOO THAILAND เป็นเพื่อนค่ะ 💕\n\nส่งข้อความ 'สวัสดี' เพื่อเริ่มต้นการสนทนาค่ะ 😊"
+                        send_line_message(reply_token, welcome_text)
+                    except Exception as e:
+                        logger.error(f"❌ Error sending Thai welcome message: {e}")
+                        # 영어 폴백
+                        english_welcome = "Hello! Thank you for adding SABOO THAILAND as a friend! 💕\n\nSend 'hello' to start chatting with us 😊"
+                        send_line_message(reply_token, english_welcome)
+                
+                elif event_type == "unfollow":
+                    user_id = event.get("source", {}).get("userId", "unknown")
+                    logger.info(f"👋 User {user_id} unfollowed")
+                
+                else:
+                    logger.info(f"ℹ️ Unhandled event type: {event_type}")
+                    
+            except Exception as e:
+                logger.error(f"❌ Error processing event: {e}")
+                continue
+        
+        return "OK", 200
+        
+    except Exception as e:
+        logger.error(f"❌ LINE Webhook fatal error: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        return "Error handled", 200
+
+# ✅ 대화 로그 저장
+def save_chat(user_msg, bot_msg, user_id="anonymous"):
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        logger.info(f"💬 [{timestamp}] User({user_id[:8]}): {user_msg[:100]}...")
+        logger.info(f"🤖 [{timestamp}] Bot: {bot_msg[:100]}...")
+    except Exception as e:
+        logger.error(f"❌ Failed to save chat log: {e}")
+
+# ✅ 에러 핸들러
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Not found"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"❌ Internal error: {error}")
+    return jsonify({"error": "Server error"}), 500
+
+# ✅ 앱 시작시 한 번만 초기화 (Flask 2.x+ 호환)
+app_initialized = False
+
+@app.before_request
+def initialize_once():
+    """앱 시작시 한 번만 초기화 실행"""
+    global app_initialized
+    if not app_initialized:
+        logger.info("🎯 Running one-time initialization...")
+        try:
+            initialize_google_data()
+            setup_scheduler()
+            app_initialized = True
+            logger.info("✅ Initialization completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Initialization failed: {e}")
+            # 초기화 실패해도 앱은 계속 실행되도록 함
+            app_initialized = True
+
+# ✅ 실행 시작
+if __name__ == '__main__':
+    try:
+        # 개발 환경에서는 직접 초기화
+        if not os.getenv('RAILWAY_ENVIRONMENT'):
+            logger.info("🚀 Development mode - running direct initialization...")
+            initialize_google_data()
+            setup_scheduler()
+            app_initialized = True
+        
+        # 사용 가능한 포트 찾기
+        default_port = int(os.environ.get("PORT", 5000))
+        
+        # 포트 사용 가능 여부 확인
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', default_port))
+            port = default_port
+            logger.info(f"✅ Port {port} is available")
+        except OSError:
+            port = find_free_port()
+            logger.warning(f"⚠️ Port {default_port} is in use, using port {port} instead")
+        
+        debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
+        
+        logger.info(f"🚀 Starting server on port {port}")
+        logger.info(f"🔧 Debug mode: {debug_mode}")
+        logger.info(f"🔑 LINE_TOKEN: {'✅ Set' if LINE_TOKEN else '❌ Missing'}")
+        logger.info(f"🔐 LINE_SECRET: {'✅ Set' if LINE_SECRET else '❌ Missing'}")
+        logger.info(f"📊 Google Sheets ID: {'✅ Set' if GOOGLE_SHEET_ID else '❌ Missing'}")
+        logger.info(f"📄 Google Docs ID: {'✅ Set' if GOOGLE_DOC_ID else '❌ Missing'}")
+        logger.info(f"🔑 Google API Key: {'✅ Set' if GOOGLE_API_KEY else '❌ Missing'}")
+        logger.info(f"🔐 Google Credentials: {'✅ Set' if GOOGLE_CREDENTIALS_JSON else '❌ Missing'}")
+        logger.info(f"⏰ Update interval: {UPDATE_INTERVAL_MINUTES} minutes")
+        
+        # Google Sheets 설정 가이드
+        if GOOGLE_SHEET_ID and GOOGLE_API_KEY:
+            logger.info("💡 Google Sheets Setup Guide:")
+            logger.info("   1. Go to your Google Sheet")
+            logger.info("   2. Click 'Share' button")
+            logger.info("   3. Change to 'Anyone with the link can view'")
+            logger.info("   4. This allows the API key to access your sheet")
+        
+        app.run(host='0.0.0.0', port=port, debug=debug_mode)
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        import traceback
+        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+    finally:
+        try:
+            if scheduler and scheduler.running:
+                scheduler.shutdown()
+                logger.info("🛑 Scheduler shutdown completed")
+        except Exception as e:
+            logger.error(f"❌ Error shutting down scheduler: {e}") .env 로드
 load_dotenv()
 
 # ✅ 로깅 설정
@@ -430,21 +822,29 @@ def detect_user_language(message):
         logger.error(f"❌ Language detection error: {e}")
         return 'english'  # 에러 시 영어로 폴백
 
+# ✅ 기본 폴백 응답
+def get_basic_fallback_response():
+    """기본 폴백 응답"""
+    return """I apologize for the technical difficulties we're experiencing.
+
+SABOO THAILAND - Basic Information:
+- Thailand's first fruit-shaped natural soap company (since 2008)
+- Store: Mixt Chatuchak, 2nd Floor, Bangkok  
+- Phone: 02-159-9880, 085-595-9565
+- Website: www.saboothailand.com
+- Shopee: shopee.co.th/thailandsoap
+- Email: saboothailand@gmail.com
+
+Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
+
+Please contact us directly or try again later. Thank you! 😊"""
+
 # ✅ 영어 폴백 응답 생성
 def get_english_fallback_response(user_message, error_context=""):
     """문제 발생 시 영어로 폴백 응답 생성"""
     try:
         if not client:
-            return """I apologize, but we're experiencing technical difficulties at the moment. 
-
-Here's some basic information about SABOO THAILAND:
-- We're Thailand's first natural fruit-shaped soap manufacturer since 2008
-- Store location: Mixt Chatuchak, 2nd Floor, Bangkok
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-
-Please try again later or contact us directly. Thank you for your understanding! 😊"""
+            return get_basic_fallback_response()
         
         prompt = f"""
 The user asked: "{user_message}"
@@ -470,408 +870,6 @@ Please provide a helpful response in English using basic company information.
         # 응답 품질 검사
         if not response_text or len(response_text.strip()) < 10:
             logger.warning("⚠️ Generated response seems too short")
-            return get_english_fallback_response(user_message, "Response generation issue")
-        
-        response_text = add_hyperlinks(response_text)
-        return response_text
-        
-    except Exception as e:
-        logger.error(f"❌ GPT response error: {e}")
-        return get_english_fallback_response(user_message, f"GPT API error: {str(e)[:100]}")
-
-# ✅ LINE 메시지 전송 함수
-def send_line_message(reply_token, message):
-    """LINE API로 메시지 전송"""
-    try:
-        if not LINE_TOKEN:
-            logger.error("❌ LINE_TOKEN not available")
-            return False
-            
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {LINE_TOKEN}"
-        }
-        
-        if isinstance(message, str):
-            payload = {
-                "replyToken": reply_token,
-                "messages": [{"type": "text", "text": message}]
-            }
-        else:
-            payload = {
-                "replyToken": reply_token,
-                "messages": [message]
-            }
-        
-        response = requests.post(
-            "https://api.line.me/v2/bot/message/reply",
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            logger.info("✅ LINE message sent successfully")
-            return True
-        else:
-            logger.error(f"❌ LINE API error: {response.status_code} - {response.text}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"❌ Send LINE message error: {e}")
-        return False
-
-# ✅ 인덱스 라우트
-@app.route('/')
-def index():
-    try:
-        return render_template('chat.html')
-    except Exception as e:
-        logger.error(f"❌ Error rendering index: {e}")
-        return """
-        <!DOCTYPE html>
-        <html>
-        <head><title>SABOO THAILAND Chatbot</title></head>
-        <body>
-            <h1>SABOO THAILAND Chatbot</h1>
-            <p>Service is temporarily unavailable. Please try again later.</p>
-        </body>
-        </html>
-        """
-
-# ✅ 헬스체크 (업데이트 정보 포함)
-@app.route('/health')
-def health():
-    return jsonify({
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "openai": "connected" if client else "disconnected",
-        "line_token": "configured" if LINE_TOKEN else "missing",
-        "line_secret": "configured" if LINE_SECRET else "missing",
-        "google_api": "configured" if GOOGLE_API_KEY else "missing",
-        "google_credentials": "configured" if GOOGLE_CREDENTIALS_JSON else "missing",
-        "google_sheet_id": "configured" if GOOGLE_SHEET_ID else "missing",
-        "google_doc_id": "configured" if GOOGLE_DOC_ID else "missing",
-        "last_data_update": last_update_time.isoformat(),
-        "update_interval_minutes": UPDATE_INTERVAL_MINUTES,
-        "sheet_data_length": len(current_sheet_text),
-        "doc_data_length": len(current_doc_text),
-        "scheduler_running": scheduler.running if scheduler else False
-    })
-
-# ✅ 수동 업데이트 트리거 엔드포인트
-@app.route('/trigger-update')
-def trigger_update():
-    """수동으로 데이터 업데이트 트리거"""
-    try:
-        old_sheet_hash = sheet_hash
-        old_doc_hash = doc_hash
-        
-        check_and_update_google_data()
-        
-        return jsonify({
-            "status": "success",
-            "timestamp": datetime.now().isoformat(),
-            "sheet_updated": sheet_hash != old_sheet_hash,
-            "doc_updated": doc_hash != old_doc_hash,
-            "last_update": last_update_time.isoformat(),
-            "old_sheet_hash": old_sheet_hash[:10] + "..." if old_sheet_hash else "None",
-            "new_sheet_hash": sheet_hash[:10] + "..." if sheet_hash else "None",
-            "old_doc_hash": old_doc_hash[:10] + "..." if old_doc_hash else "None", 
-            "new_doc_hash": doc_hash[:10] + "..." if doc_hash else "None"
-        })
-    except Exception as e:
-        logger.error(f"❌ Manual update trigger error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# ✅ 디버그용 엔드포인트
-@app.route('/debug-data')
-def debug_data():
-    """데이터 상태 디버깅"""
-    try:
-        # 실시간으로 데이터 가져오기 시도
-        fresh_sheet = fetch_google_sheet_data()
-        fresh_doc = fetch_google_doc_data()
-        
-        return jsonify({
-            "current_data": {
-                "sheet_length": len(current_sheet_text),
-                "doc_length": len(current_doc_text),
-                "sheet_hash": sheet_hash,
-                "doc_hash": doc_hash,
-                "last_update": last_update_time.isoformat(),
-                "sheet_preview": current_sheet_text[:300] + "..." if len(current_sheet_text) > 300 else current_sheet_text,
-                "doc_preview": current_doc_text[:300] + "..." if len(current_doc_text) > 300 else current_doc_text
-            },
-            "fresh_data": {
-                "sheet_length": len(fresh_sheet) if fresh_sheet else 0,
-                "doc_length": len(fresh_doc) if fresh_doc else 0,
-                "sheet_preview": fresh_sheet[:300] + "..." if fresh_sheet and len(fresh_sheet) > 300 else (fresh_sheet or "No data"),
-                "doc_preview": fresh_doc[:300] + "..." if fresh_doc and len(fresh_doc) > 300 else (fresh_doc or "No data"),
-                "sheet_hash": calculate_hash(fresh_sheet) if fresh_sheet else "None",
-                "doc_hash": calculate_hash(fresh_doc) if fresh_doc else "None"
-            },
-            "config": {
-                "google_sheet_id": GOOGLE_SHEET_ID[:10] + "..." if GOOGLE_SHEET_ID else None,
-                "google_doc_id": GOOGLE_DOC_ID[:10] + "..." if GOOGLE_DOC_ID else None,
-                "has_api_key": bool(GOOGLE_API_KEY),
-                "has_credentials": bool(GOOGLE_CREDENTIALS_JSON),
-                "update_interval": UPDATE_INTERVAL_MINUTES,
-                "scheduler_running": scheduler.running if scheduler else False
-            },
-            "comparison": {
-                "sheet_data_different": calculate_hash(fresh_sheet) != sheet_hash if fresh_sheet else "Cannot compare",
-                "doc_data_different": calculate_hash(fresh_doc) != doc_hash if fresh_doc else "Cannot compare"
-            }
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ✅ 웹 챗 라우트 (영어 폴백 지원)
-@app.route('/chat', methods=['POST'])
-def chat():
-    try:
-        user_message = request.json.get('message', '').strip()
-        if not user_message:
-            return jsonify({"error": "Empty message."}), 400
-
-        # 응답 생성 (내부적으로 영어 폴백 처리됨)
-        bot_response = get_gpt_response(user_message)
-        save_chat(user_message, bot_response)
-        
-        return jsonify({
-            "reply": bot_response,
-            "is_html": True,
-            "last_data_update": last_update_time.isoformat(),
-            "user_language": detect_user_language(user_message)
-        })
-
-    except Exception as e:
-        logger.error(f"❌ Error in /chat: {e}")
-        # 웹 챗 에러 시에도 영어 폴백
-        fallback_response = get_english_fallback_response(
-            user_message if 'user_message' in locals() else "general inquiry", 
-            f"Web chat system error: {str(e)[:100]}"
-        )
-        return jsonify({
-            "reply": fallback_response,
-            "is_html": True,
-            "error": "fallback_mode"
-        })
-
-# ✅ LINE 챗봇 Webhook
-@app.route('/line', methods=['POST'])
-def line_webhook():
-    """LINE Webhook 핸들러"""
-    try:
-        body = request.get_data(as_text=True)
-        signature = request.headers.get('X-Line-Signature', '')
-        
-        logger.info(f"📨 LINE webhook received: {len(body)} bytes")
-        
-        if not verify_line_signature(body.encode('utf-8'), signature):
-            logger.warning("⚠️ Invalid signature, but continuing...")
-        
-        try:
-            webhook_data = json.loads(body)
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ JSON decode error: {e}")
-            return "Invalid JSON", 400
-        
-        events = webhook_data.get("events", [])
-        logger.info(f"📋 Processing {len(events)} events")
-        
-        for event in events:
-            try:
-                event_type = event.get("type")
-                logger.info(f"🔄 Processing event type: {event_type}")
-                
-                if event_type == "message" and event.get("message", {}).get("type") == "text":
-                    user_text = event["message"]["text"].strip()
-                    reply_token = event["replyToken"]
-                    user_id = event.get("source", {}).get("userId", "unknown")
-                    
-                    logger.info(f"👤 User {user_id}: {user_text}")
-                    
-                    welcome_keywords = ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม"]
-                    
-                    if user_text.lower() in welcome_keywords:
-                        # 환영 메시지도 언어별로 처리
-                        user_lang = detect_user_language(user_text)
-                        
-                        if user_lang == 'thai':
-                            response_text = """สวัสดีค่ะ! 💕 ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ
-
-🧴 เราเป็นผู้ผลิตสบู่ธรรมชาติและผลิตภัณฑ์อาบน้ำครั้งแรกในไทยที่ทำสบู่รูปผลไม้ค่ะ
-
-📍 ร้าน: มิกซ์ จตุจักร ชั้น 2
-📞 โทร: 02-159-9880
-🛒 Shopee: shopee.co.th/thailandsoap
-🌐 เว็บไซต์: www.saboothailand.com
-
-มีอะไรให้ดิฉันช่วยเหลือคะ? 😊"""
-                        elif user_lang == 'korean':
-                            response_text = """안녕하세요! 💕 SABOO THAILAND에 오신 것을 환영합니다!
-
-🧴 저희는 태국 최초로 과일 모양 천연 비누를 만드는 회사입니다
-
-📍 매장: 믹스 짜뚜짝, 2층
-📞 전화: 02-159-9880
-🛒 쇼피: shopee.co.th/thailandsoap
-🌐 웹사이트: www.saboothailand.com
-
-무엇을 도와드릴까요? 😊"""
-                        else:  # English
-                            response_text = """Hello! 💕 Welcome to SABOO THAILAND!
-
-🧴 We are Thailand's first company to create fruit-shaped natural soaps and bath products
-
-📍 Store: Mixt Chatuchak, 2nd Floor
-📞 Phone: 02-159-9880
-🛒 Shopee: shopee.co.th/thailandsoap
-🌐 Website: www.saboothailand.com
-
-How can I help you today? 😊"""
-                        
-                        response_text = add_hyperlinks(response_text)
-                    else:
-                        response_text = get_gpt_response(user_text)
-                    
-                    # LINE은 HTML을 지원하지 않으므로 HTML 태그 제거
-                    clean_response = re.sub(r'<[^>]+>', '', response_text)
-                    
-                    success = send_line_message(reply_token, clean_response)
-                    
-                    if success:
-                        save_chat(user_text, clean_response[:100] + "...", user_id)
-                    else:
-                        logger.error(f"❌ Failed to send response to user {user_id}")
-                
-                elif event_type == "follow":
-                    reply_token = event["replyToken"]
-                    # 친구 추가도 영어 폴백 지원
-                    try:
-                        welcome_text = "สวัสดีค่ะ! ขอบคุณที่เพิ่ม SABOO THAILAND เป็นเพื่อนค่ะ 💕\n\nส่งข้อความ 'สวัสดี' เพื่อเริ่มต้นการสนทนาค่ะ 😊"
-                        send_line_message(reply_token, welcome_text)
-                    except Exception as e:
-                        logger.error(f"❌ Error sending Thai welcome message: {e}")
-                        # 영어 폴백
-                        english_welcome = "Hello! Thank you for adding SABOO THAILAND as a friend! 💕\n\nSend 'hello' to start chatting with us 😊"
-                        send_line_message(reply_token, english_welcome)
-                
-                elif event_type == "unfollow":
-                    user_id = event.get("source", {}).get("userId", "unknown")
-                    logger.info(f"👋 User {user_id} unfollowed")
-                
-                else:
-                    logger.info(f"ℹ️ Unhandled event type: {event_type}")
-                    
-            except Exception as e:
-                logger.error(f"❌ Error processing event: {e}")
-                continue
-        
-        return "OK", 200
-        
-    except Exception as e:
-        logger.error(f"❌ LINE Webhook fatal error: {e}")
-        import traceback
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        return "Error handled", 200
-
-# ✅ 대화 로그 저장
-def save_chat(user_msg, bot_msg, user_id="anonymous"):
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f"💬 [{timestamp}] User({user_id[:8]}): {user_msg[:100]}...")
-        logger.info(f"🤖 [{timestamp}] Bot: {bot_msg[:100]}...")
-    except Exception as e:
-        logger.error(f"❌ Failed to save chat log: {e}")
-
-# ✅ 에러 핸들러
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({"error": "Not found"}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"❌ Internal error: {error}")
-    return jsonify({"error": "Server error"}), 500
-
-# ✅ 앱 시작시 한 번만 초기화 (Flask 2.x+ 호환)
-app_initialized = False
-
-@app.before_request
-def initialize_once():
-    """앱 시작시 한 번만 초기화 실행"""
-    global app_initialized
-    if not app_initialized:
-        logger.info("🎯 Running one-time initialization...")
-        try:
-            initialize_google_data()
-            setup_scheduler()
-            app_initialized = True
-            logger.info("✅ Initialization completed successfully")
-        except Exception as e:
-            logger.error(f"❌ Initialization failed: {e}")
-            # 초기화 실패해도 앱은 계속 실행되도록 함
-            app_initialized = True
-
-# ✅ 실행 시작
-if __name__ == '__main__':
-    try:
-        # 개발 환경에서는 직접 초기화
-        if not os.getenv('RAILWAY_ENVIRONMENT'):
-            logger.info("🚀 Development mode - running direct initialization...")
-            initialize_google_data()
-            setup_scheduler()
-            app_initialized = True
-        
-        # 사용 가능한 포트 찾기
-        default_port = int(os.environ.get("PORT", 5000))
-        
-        # 포트 사용 가능 여부 확인
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('localhost', default_port))
-            port = default_port
-            logger.info(f"✅ Port {port} is available")
-        except OSError:
-            port = find_free_port()
-            logger.warning(f"⚠️ Port {default_port} is in use, using port {port} instead")
-        
-        debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
-        
-        logger.info(f"🚀 Starting server on port {port}")
-        logger.info(f"🔧 Debug mode: {debug_mode}")
-        logger.info(f"🔑 LINE_TOKEN: {'✅ Set' if LINE_TOKEN else '❌ Missing'}")
-        logger.info(f"🔐 LINE_SECRET: {'✅ Set' if LINE_SECRET else '❌ Missing'}")
-        logger.info(f"📊 Google Sheets ID: {'✅ Set' if GOOGLE_SHEET_ID else '❌ Missing'}")
-        logger.info(f"📄 Google Docs ID: {'✅ Set' if GOOGLE_DOC_ID else '❌ Missing'}")
-        logger.info(f"🔑 Google API Key: {'✅ Set' if GOOGLE_API_KEY else '❌ Missing'}")
-        logger.info(f"🔐 Google Credentials: {'✅ Set' if GOOGLE_CREDENTIALS_JSON else '❌ Missing'}")
-        logger.info(f"⏰ Update interval: {UPDATE_INTERVAL_MINUTES} minutes")
-        
-        # Google Sheets 설정 가이드
-        if GOOGLE_SHEET_ID and GOOGLE_API_KEY:
-            logger.info("💡 Google Sheets Setup Guide:")
-            logger.info("   1. Go to your Google Sheet")
-            logger.info("   2. Click 'Share' button")
-            logger.info("   3. Change to 'Anyone with the link can view'")
-            logger.info("   4. This allows the API key to access your sheet")
-        
-        app.run(host='0.0.0.0', port=port, debug=debug_mode)
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to start server: {e}")
-        import traceback
-        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
-    finally:
-        try:
-            if scheduler and scheduler.running:
-                scheduler.shutdown()
-                logger.info("🛑 Scheduler shutdown completed")
-        except Exception as e:
-            logger.error(f"❌ Error shutting down scheduler: {e}")d response seems too short")
             return get_basic_fallback_response()
         
         response_text = add_hyperlinks(response_text)
@@ -880,22 +878,6 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"❌ GPT response error: {e}")
         return get_basic_fallback_response()
-
-def get_basic_fallback_response():
-    """기본 폴백 응답"""
-    return """I apologize for the technical difficulties we're experiencing.
-
-SABOO THAILAND - Basic Information:
-- Thailand's first fruit-shaped natural soap company (since 2008)
-- Store: Mixt Chatuchak, 2nd Floor, Bangkok  
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-- Email: saboothailand@gmail.com
-
-Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
-
-Please contact us directly or try again later. Thank you! 😊"""
 
 def add_hyperlinks(text):
     """텍스트에서 전화번호와 URL을 하이퍼링크로 변환"""
@@ -950,7 +932,7 @@ def verify_line_signature(body, signature):
         logger.error(f"❌ Signature verification error: {e}")
         return False
 
-# ✅ GPT 응답 생성 함수 (수정됨)
+# ✅ GPT 응답 생성 함수 (완성된 버전)
 def get_gpt_response(user_message):
     """OpenAI GPT로 응답 생성 - 최신 데이터 사용 + 영어 폴백"""
     user_language = detect_user_language(user_message)
@@ -993,4 +975,19 @@ def get_gpt_response(user_message):
         
         # 응답 품질 검사
         if not response_text or len(response_text.strip()) < 10:
-            logger.warning("⚠️ Generate
+            logger.warning("⚠️ Generated response seems too short")
+            return get_basic_fallback_response()
+        
+        # 적절한 언어로 응답했는지 간단 체크
+        if user_language == 'thai' and not re.search(r'[\u0E00-\u0E7F]', response_text):
+            logger.warning("⚠️ Expected Thai response but got non-Thai")
+            return get_english_fallback_response(user_message, "Language processing issue")
+        
+        response_text = add_hyperlinks(response_text)
+        return response_text
+        
+    except Exception as e:
+        logger.error(f"❌ GPT response error: {e}")
+        return get_basic_fallback_response()
+
+# ✅
