@@ -472,18 +472,12 @@ Please provide a helpful response in English using basic company information.
             logger.warning("⚠️ Generated response seems too short")
             return get_english_fallback_response(user_message, "Response generation issue")
         
-        # 적절한 언어로 응답했는지 간단 체크
-        if user_language == 'thai' and not re.search(r'[\u0E00-\u0E7F]', response_text):
-            logger.warning("⚠️ Expected Thai response but got non-Thai")
-            return get_english_fallback_response(user_message, "Language processing issue")
-        
         response_text = add_hyperlinks(response_text)
         return response_text
         
     except Exception as e:
         logger.error(f"❌ GPT response error: {e}")
-        error_context = f"GPT API error: {str(e)[:100]}"
-        return get_english_fallback_response(user_message, error_context)
+        return get_english_fallback_response(user_message, f"GPT API error: {str(e)[:100]}")
 
 # ✅ LINE 메시지 전송 함수
 def send_line_message(reply_token, message):
@@ -530,7 +524,20 @@ def send_line_message(reply_token, message):
 # ✅ 인덱스 라우트
 @app.route('/')
 def index():
-    return render_template('chat.html')
+    try:
+        return render_template('chat.html')
+    except Exception as e:
+        logger.error(f"❌ Error rendering index: {e}")
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>SABOO THAILAND Chatbot</title></head>
+        <body>
+            <h1>SABOO THAILAND Chatbot</h1>
+            <p>Service is temporarily unavailable. Please try again later.</p>
+        </body>
+        </html>
+        """
 
 # ✅ 헬스체크 (업데이트 정보 포함)
 @app.route('/health')
@@ -799,70 +806,84 @@ def initialize_once():
     global app_initialized
     if not app_initialized:
         logger.info("🎯 Running one-time initialization...")
-        initialize_google_data()
-        setup_scheduler()
-        app_initialized = True
+        try:
+            initialize_google_data()
+            setup_scheduler()
+            app_initialized = True
+            logger.info("✅ Initialization completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Initialization failed: {e}")
+            # 초기화 실패해도 앱은 계속 실행되도록 함
+            app_initialized = True
 
 # ✅ 실행 시작
 if __name__ == '__main__':
-    # 개발 환경에서는 직접 초기화
-    if not os.getenv('RAILWAY_ENVIRONMENT'):
-        logger.info("🚀 Development mode - running direct initialization...")
-        initialize_google_data()
-        setup_scheduler()
-        app_initialized = True
-    
-    # 사용 가능한 포트 찾기
-    default_port = int(os.environ.get("PORT", 5000))
-    
-    # 포트 사용 가능 여부 확인
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('localhost', default_port))
-        port = default_port
-        logger.info(f"✅ Port {port} is available")
-    except OSError:
-        port = find_free_port()
-        logger.warning(f"⚠️ Port {default_port} is in use, using port {port} instead")
-    
-    debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
-    
-    logger.info(f"🚀 Starting server on port {port}")
-    logger.info(f"🔧 Debug mode: {debug_mode}")
-    logger.info(f"🔑 LINE_TOKEN: {'✅ Set' if LINE_TOKEN else '❌ Missing'}")
-    logger.info(f"🔐 LINE_SECRET: {'✅ Set' if LINE_SECRET else '❌ Missing'}")
-    logger.info(f"📊 Google Sheets ID: {'✅ Set' if GOOGLE_SHEET_ID else '❌ Missing'}")
-    logger.info(f"📄 Google Docs ID: {'✅ Set' if GOOGLE_DOC_ID else '❌ Missing'}")
-    logger.info(f"🔑 Google API Key: {'✅ Set' if GOOGLE_API_KEY else '❌ Missing'}")
-    logger.info(f"🔐 Google Credentials: {'✅ Set' if GOOGLE_CREDENTIALS_JSON else '❌ Missing'}")
-    logger.info(f"⏰ Update interval: {UPDATE_INTERVAL_MINUTES} minutes")
-    
-    # Google Sheets 설정 가이드
-    if GOOGLE_SHEET_ID and GOOGLE_API_KEY:
-        logger.info("💡 Google Sheets Setup Guide:")
-        logger.info("   1. Go to your Google Sheet")
-        logger.info("   2. Click 'Share' button")
-        logger.info("   3. Change to 'Anyone with the link can view'")
-        logger.info("   4. This allows the API key to access your sheet")
-    
-    try:
+        # 개발 환경에서는 직접 초기화
+        if not os.getenv('RAILWAY_ENVIRONMENT'):
+            logger.info("🚀 Development mode - running direct initialization...")
+            initialize_google_data()
+            setup_scheduler()
+            app_initialized = True
+        
+        # 사용 가능한 포트 찾기
+        default_port = int(os.environ.get("PORT", 5000))
+        
+        # 포트 사용 가능 여부 확인
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', default_port))
+            port = default_port
+            logger.info(f"✅ Port {port} is available")
+        except OSError:
+            port = find_free_port()
+            logger.warning(f"⚠️ Port {default_port} is in use, using port {port} instead")
+        
+        debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
+        
+        logger.info(f"🚀 Starting server on port {port}")
+        logger.info(f"🔧 Debug mode: {debug_mode}")
+        logger.info(f"🔑 LINE_TOKEN: {'✅ Set' if LINE_TOKEN else '❌ Missing'}")
+        logger.info(f"🔐 LINE_SECRET: {'✅ Set' if LINE_SECRET else '❌ Missing'}")
+        logger.info(f"📊 Google Sheets ID: {'✅ Set' if GOOGLE_SHEET_ID else '❌ Missing'}")
+        logger.info(f"📄 Google Docs ID: {'✅ Set' if GOOGLE_DOC_ID else '❌ Missing'}")
+        logger.info(f"🔑 Google API Key: {'✅ Set' if GOOGLE_API_KEY else '❌ Missing'}")
+        logger.info(f"🔐 Google Credentials: {'✅ Set' if GOOGLE_CREDENTIALS_JSON else '❌ Missing'}")
+        logger.info(f"⏰ Update interval: {UPDATE_INTERVAL_MINUTES} minutes")
+        
+        # Google Sheets 설정 가이드
+        if GOOGLE_SHEET_ID and GOOGLE_API_KEY:
+            logger.info("💡 Google Sheets Setup Guide:")
+            logger.info("   1. Go to your Google Sheet")
+            logger.info("   2. Click 'Share' button")
+            logger.info("   3. Change to 'Anyone with the link can view'")
+            logger.info("   4. This allows the API key to access your sheet")
+        
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        import traceback
+        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
     finally:
-    if scheduler and scheduler.running:
-        scheduler.shutdown()
-        logger.info("🛑 Scheduler shutdown completed")
-
+        try:
+            if scheduler and scheduler.running:
+                scheduler.shutdown()
+                logger.info("🛑 Scheduler shutdown completed")
+        except Exception as e:
+            logger.error(f"❌ Error shutting down scheduler: {e}")d response seems too short")
+            return get_basic_fallback_response()
         
-        
-        # 기술적 문제 안내 추가
-        if error_context:
-            response_text += f"\n\n(Note: We're currently experiencing some technical issues with our data system, but I'm happy to help with basic information about SABOO THAILAND.)"
-        
+        response_text = add_hyperlinks(response_text)
         return response_text
         
     except Exception as e:
-        logger.error(f"❌ English fallback response error: {e}")
-        return """I apologize for the technical difficulties we're experiencing.
+        logger.error(f"❌ GPT response error: {e}")
+        return get_basic_fallback_response()
+
+def get_basic_fallback_response():
+    """기본 폴백 응답"""
+    return """I apologize for the technical difficulties we're experiencing.
 
 SABOO THAILAND - Basic Information:
 - Thailand's first fruit-shaped natural soap company (since 2008)
@@ -929,7 +950,7 @@ def verify_line_signature(body, signature):
         logger.error(f"❌ Signature verification error: {e}")
         return False
 
-# ✅ GPT 응답 생성 함수 (업데이트된 데이터 사용 + 영어 폴백)
+# ✅ GPT 응답 생성 함수 (수정됨)
 def get_gpt_response(user_message):
     """OpenAI GPT로 응답 생성 - 최신 데이터 사용 + 영어 폴백"""
     user_language = detect_user_language(user_message)
@@ -968,4 +989,8 @@ def get_gpt_response(user_message):
             timeout=25
         )
         
-        response_text =
+        response_text = completion.choices[0].message.content.strip()
+        
+        # 응답 품질 검사
+        if not response_text or len(response_text.strip()) < 10:
+            logger.warning("⚠️ Generate
