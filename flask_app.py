@@ -262,7 +262,7 @@ There was a technical issue: {error_context}
 Please provide a helpful response in English using basic company information.
 """
         completion = client.chat.completions.create(
-            model="gpt-4o", 
+            model="gpt-4o-mini", 
             messages=[
                 {"role": "system", "content": ENGLISH_FALLBACK_MESSAGE}, 
                 {"role": "user", "content": prompt}
