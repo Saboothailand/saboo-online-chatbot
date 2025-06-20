@@ -1,0 +1,397 @@
+
+
+SABOO THAILAND PRODUCT CATALOG - CHATBOT Q&A FORMAT
+GENERAL PRODUCT INFORMATION
+Q: How many products does SABOO Thailand offer?
+A: SABOO Thailand offers over 319 unique products across multiple categories including bath bombs, body care, soaps, and specialty items.
+Q: What are the main product categories?
+A: Our main categories include:
+
+Bubble Bath Bombs (31 products)
+Body Care Products (20 products)
+Specialty Soaps and Bath Products (268+ products)
+Seasonal and themed collections
+
+BUBBLE BATH BOMBS & BATH GELS
+Q: What bubble bath products do you have?
+A: We offer an extensive range of bubble bath gels and bombs with unique themed scents:
+Sweet Treats Collection:
+
+Berry Bonbon Bay
+Bubblegum Breeze
+Candy Floss Clouds
+Caramel Cascade
+Chocolate Chip Cove
+Cinnamon Swirl Sea
+Cookie Dough Cove
+Cupcake Cove
+Gummy Bear Glide
+Jellybean Jubilee
+Lemon Drop Lagoon
+Lollipop Lagoon
+Marshmallow Meadow
+Minty Macaron Marina
+
+Classic Scents:
+
+Apple, Avocado, Banana, Blossom, Cherry, Coconut, Grape, Jasmine, Lavender, Lemon, Lime, Mango, Orange, Peach, Rose, Strawberry
+
+Q: Do you have themed bath bombs for children?
+A: Yes! We have special collections perfect for kids:
+
+Animal-themed series (Bear, Duck, Elephant, Dinosaur)
+Monster series with fun colors
+Jungle animal collection
+Holiday themed products (Halloween, Christmas)
+
+BODY CARE PRODUCTS
+Q: What body care products are available?
+A: Our body care line includes:
+Body Cream Scrubs:
+
+Berry Avocado Scent
+Coconut Scent
+Mango Scent
+Passion Goat Milk Scent
+Tamarind Scent
+
+Natural Salt Scrubs:
+
+Blossom Scent
+Lemon Turmeric Scent
+Lemongrass Scent
+Ocean Scent
+Vanilla Mint Scent
+
+Scrubby Bar Soaps:
+
+Coconut
+Jasmine Rice
+Lavender
+Leelawadee
+Rose
+
+Q: What makes your scrub products special?
+A: Our scrubs combine natural ingredients with beautiful Thai-inspired scents. They provide gentle exfoliation while moisturizing and leaving your skin fragrant.
+SPECIALTY PRODUCTS
+Q: Do you have specialty or seasonal items?
+A: Yes! We offer:
+Compress Balls (Thai Herbal):
+
+Lemongrass
+Mangosteen
+Peppermint
+Pomegranate
+Turmeric & Ginger
+
+Fruit Picker Soap Collection:
+
+Calamansi
+Grape
+Lemon
+Mango
+Mangosteen
+
+Seasonal Items:
+
+Christmas Tree Strawberry
+Halloween Apple
+Halloween Orange
+
+Natural Oils:
+
+Coconut Oil 220ml
+
+Q: What are compress balls?
+A: Compress balls are traditional Thai herbal products made with natural herbs and spices. They're used for aromatherapy and relaxation.
+PRODUCT SIZES AND PACKAGING
+Q: What sizes are your products available in?
+A: Our products come in various sizes:
+
+Bath bombs: typically 150g
+Bath powders: 100g
+Body creams and scrubs: various sizes
+Oils: 220ml bottles
+Bar soaps: standard bar size
+
+INGREDIENTS AND SAFETY
+Q: Are SABOO products safe?
+A: Yes, all SABOO Thailand products are:
+
+FDA registered with proper certification numbers
+Made with quality ingredients
+Safe for regular use
+Suitable for most skin types
+
+Q: Do you use natural ingredients?
+A: Yes, many of our products feature natural ingredients including:
+
+Natural salt for scrubs
+Herbal extracts for compress balls
+Coconut oil
+Traditional Thai herbs and botanicals
+Natural fruit essences
+
+SCENT PROFILES
+Q: What scent families do you offer?
+A: We offer several scent categories:
+Fruity: Apple, Mango, Strawberry, Coconut, Lemon, Orange
+Floral: Rose, Jasmine, Lavender, Blossom, Leelawadee
+Herbal: Lemongrass, Turmeric, Peppermint, Ginger
+Sweet: Various dessert and candy-inspired scents
+Fresh: Ocean, Mint, Vanilla combinations
+Q: What does Leelawadee smell like?
+A: Leelawadee (Plumeria) is a classic Thai floral scent - sweet, exotic, and tropical with a creamy, intoxicating fragrance.
+Q: Do you have unisex scents?
+A: Yes! Many of our scents are unisex including:
+
+Ocean, Coconut, Lemon, Peppermint
+Herbal scents like Lemongrass
+Fresh combinations like Vanilla Mint
+
+USAGE RECOMMENDATIONS
+Q: How do I use bath bombs?
+A: Simply drop the bath bomb into warm running water and watch it fizz and dissolve, releasing fragrance and creating bubbles for a luxurious bath experience.
+Q: How should I use body scrubs?
+A: Apply to damp skin in circular motions, focusing on rough areas like elbows and knees. Rinse thoroughly. Use 2-3 times per week for best results.
+Q: How do I store these products?
+A: Store in a cool, dry place away from direct sunlight. Keep packaging sealed to maintain freshness and prevent moisture absorption.
+GIFT AND BULK OPTIONS
+Q: Do you offer gift sets?
+A: Yes, we have various themed collections that make perfect gifts, including seasonal sets and scent-coordinated collections.
+Q: Are bulk quantities available?
+A: Yes, we offer bulk pricing for quantities of 50, 100, 500, 1000, and 5000 pieces depending on the product.
+BRAND INFORMATION
+Q: What makes SABOO Thailand special?
+A: SABOO Thailand specializes in:
+
+Authentic Thai-inspired scents and ingredients
+High-quality, safe formulations
+Creative themed collections
+Traditional herbal products
+Affordable luxury bath and body care
+FDA-approved safety standards
+
+Q: Where can I learn more about specific products?
+A: Feel free to ask about any specific product, scent, or category. I can provide detailed information about ingredients, usage, and recommendations based on your preferences.
+
+Chatbot Guidelines:
+
+Always maintain enthusiasm about product quality and variety
+Offer to help customers find products based on their scent preferences
+Mention Thai heritage and natural ingredients when relevant
+Be ready to provide detailed information about any specific product mentioned
+Suggest complementary products when appropriate
+Emphasize safety and quality certifications
+
+ID,Product_Name,Category,Scent,Barcode,Price,FDA_No
+1,"BUBBLE BATHPOWDER  - OCEAN","Bubble Bath Bombs","OCEAN","8859176073491","89","13-1-6400047191"
+2,"BUBBLE BATHPOWDER  - ORANGE","Bubble Bath Bombs","ORANGE","8859176073576","89","13-1-6400047191"
+3,"BUBBLE BATHPOWDER  - APPLE","Bubble Bath Bombs","APPLE","8859176073842","89","13-1-6400047191"
+4,"THAILAND BATH POWDER  - BANANA","Other Products","BANANA","8859176073859","89","13-1-6300032410"
+5,"THAILAND BATH POWDER  - MILK","Other Products","MILK","8859176073866","89","13-1-6300032410"
+6,"THAILAND BATH POWDER  - GRAPE","Other Products","GRAPE","8859176073873","89","13-1-6300032410"
+7,"THAILAND BATH POWDER  - PINEAPPLE","Other Products","PINEAPPLE","8859176073880","89","13-1-6300032410"
+8,"THAILAND BATH POWDER  - PEACH","Other Products","PEACH","8859176073897","89","13-1-6300032410"
+9,"THAILAND BATH POWDER  - CHERRY","Other Products","CHERRY","8859176073965","89","13-1-6300032410"
+10,"BUBBLE BATH POWDER FLORAL FIRE ELEMENT","Bubble Bath Bombs","ELEMENT","8859176100814","185","13-1-6600031219"
+11,"BUBBLE BATH POWDER FLORAL EARTH ELEMENT","Bubble Bath Bombs","ELEMENT","8859176100807","185","13-1-6600031219"
+12,"BUBBLE BATH POWDER FLORAL WATER ELEMENT","Bubble Bath Bombs","ELEMENT","8859176100821","185","13-1-6600031219"
+13,"BUBBLE BATH POWDER FLORAL WIND ELEMENT","Bubble Bath Bombs","ELEMENT","8859176100838","185","13-1-6600031219"
+14,"BUBBLE BATH POWDER LAVENDER","Bubble Bath Bombs","LAVENDER","8859176100692","185","13-1-6600031219"
+15,"BUBBLE BATH POWDER BLOSSOM","Bubble Bath Bombs","BLOSSOM","8859176100708","185","13-1-6600031219"
+16,"BUBBLE BATH POWDER JASMINE","Bubble Bath Bombs","JASMINE","8859176100678","185","13-1-6600031219"
+17,"BUBBLE BATH POWDER ROSE","Bubble Bath Bombs","ROSE","8859176100685","185","13-1-6600031219"
+18,"NATURAL SALT SCRUB - VANILLA MINT SCENT","Body Care","VANILLA MINT","8859176062259","250","13-1-6600001708"
+19,"NATURAL SALT SCRUB - LEMON TURMERIC SCENT","Body Care","LEMON TURMERIC","8859176062266","250","13-1-6600001708"
+20,"NATURAL SALT SCRUB - LEMONGRASS SCENT","Body Care","LEMONGRASS","8859176062273","250","13-1-6600001708"
+21,"NATURAL SALT SCRUB - BLOSSOM SCENT","Body Care","BLOSSOM","8859176062280","250","13-1-6600001708"
+22,"NATURAL SALT SCRUB - OCEAN SCENT","Body Care","OCEAN","8859176062297","250","13-1-6600001708"
+23,"BODY CREAM SCRUB - PASSION GOAT MILK SCENT","Body Care","PASSION GOAT MILK","8859176062440","295","13-1-6600002621"
+24,"BODY CREAM SCRUB - BERRY AVOCADO SCENT","Body Care","BERRY AVOCADO","8859176069968","295","13-1-6600002621"
+25,"BODY CREAM SCRUB - MANGO SCENT","Body Care","MANGO","8859176062433","295","13-1-6600002621"
+26,"BODY CREAM SCRUB - TAMARIND SCENT","Body Care","TAMARIND","8859176062426","295","13-1-6600002621"
+27,"BODY CREAM SCRUB - COCONUT SCENT","Body Care","COCONUT","8859176062419","295","13-1-6600002621"
+28,"HAND CREAM - ROSE SCENT","Other Products","ROSE","8859176020082","85"," 13-1-6600001703"
+29,"HAND CREAM - LAVENDER SCENT","Other Products","LAVENDER","8859176020099","85"," 13-1-6600001703"
+30,"HAND CREAM - COCONUT SCENT","Other Products","COCONUT","859176020068","85"," 13-1-6600001703"
+31,"HAND CREAM - MANGO SCENT","Other Products","MANGO","8859176020075","85"," 13-1-6600001703"
+32,"HAND CREAM - JASMINE SCENT","Other Products","JASMINE","8859176020112","85"," 13-1-6600001703"
+33,"PARFUM 25ML - Heavan In A Bottle","Other Products","Heavan In A Bottle","8859176079684","150",""
+34,"PARFUM 25ML - Sunshine Day","Other Products","Sunshine Day","8859176079691","150",""
+35,"PARFUM 25ML - Paradise Is Your","Other Products","Paradise Is Your","8859176079707","150",""
+36,"PARFUM 25ML - Spice Me Up","Other Products","Spice Me Up","8859176079714","150",""
+37,"PARFUM 25ML - Midnight Fancy","Other Products","Midnight Fancy","8859176079721","150",""
+38,"PARFUM 25ML - Summer Dream","Other Products","Summer Dream","8859176079738","150",""
+39,"PARFUM 25ML - Love Potion","Other Products","Love Potion","8859176079745","150",""
+40,"PARFUM 25ML - Spitzy Kiss","Other Products","Spitzy Kiss","8859176079752","150",""
+41,"PARFUM 25ML - Spray It On Me","Other Products","Spray It On Me","8859176079769","150",""
+42,"PARFUM 25ML - Floral Wonder","Other Products","Floral Wonder","8859176079776","150",""
+43,"PARFUM 25ML - Sweet Morning","Other Products","Sweet Morning","8859176079783","150",""
+44,"PARFUM 25ML - Cool Winter","Other Products","Cool Winter","8859176079790","150",""
+45,"PARFUM 25ML - Fresh Spring","Other Products","Fresh Spring","8859176079806","150",""
+46,"PARFUM 25ML - Garden Of Flower","Other Products","Garden Of Flower","8859176079813","150",""
+47,"PARFUM 25ML - Peach And Seranity","Other Products","Peach And Seranity","8859176079820","150",""
+48,"PARFUM 25ML - Ocean Vibes","Other Products","Ocean Vibes","8859176079837","150",""
+49,"PARFUM 25ML - Down To Earth","Other Products","Down To Earth","8859176079844","150",""
+50,"PARFUM 25ML - Orange Delight","Other Products","Orange Delight","8859176079851","150",""
+51,"Natural Handmade Cold Process Oil Soap - Bamboo Charcoal","Natural Oils","Charcoal","8859176039633","150","13-1-6600023582"
+52,"Natural Handmade Cold Process Oil Soap - Jasmine","Natural Oils","Jasmine","8859176039640","150","13-1-6600023582"
+53,"Natural Handmade Cold Process Oil Soap - Lavender","Natural Oils","Lavender","8859176039657","150","13-1-6600023582"
+54,"Natural Handmade Cold Process Oil Soap - Lemon","Natural Oils","Lemon","8859176039664","150","13-1-6600023582"
+55,"Natural Handmade Cold Process Oil Soap - Mangosteen","Natural Oils","Mangosteen","8859176039671","150","13-1-6600023582"
+56,"Natural Handmade Cold Process Oil Soap - Milk","Natural Oils","Milk","8859176039688","150","13-1-6600023582"
+57,"Natural Handmade Cold Process Oil Soap - Orange","Natural Oils","Orange","8859176039695","150","13-1-6600023582"
+58,"Natural Handmade Cold Process Oil Soap - Rose","Natural Oils","Rose","8859176039701","150","13-1-6600023582"
+59,"Natural Handmade Cold Process Oil Soap - Tumeric","Natural Oils","Tumeric","8859176039718","150","13-1-6600023582"
+60,"Natural Handmade Cold Process Oil Soap - Honey","Natural Oils","Honey","8859176069081","150","13-1-6600023582"
+61,"Natural Handmade Cold Process Oil Soap - Tea Tree","Natural Oils","Tree","8859176069098","150","13-1-6600023582"
+62,"Natural Handmade Cold Process Oil Soap - Blossom","Natural Oils","Blossom","8859176069104","150","13-1-6600023582"
+63,"Natural Handmade Cold Process Oil Soap - Cacao","Natural Oils","Cacao","8859176069111","150","13-1-6600023582"
+64,"Natural Handmade Cold Process Oil Soap - Mango","Natural Oils","Mango","8859176069128","150","13-1-6600023582"
+65,"Natural Handmade Cold Process Oil Soap - Apple Cinnamon","Natural Oils","Cinnamon","8859176069135","150","13-1-6600023582"
+66,"Natural Handmade Cold Process Oil Soap - Lemongrass","Natural Oils","Lemongrass","8859176069142","150","13-1-6600023582"
+67,"Natural Handmade Cold Process Oil Soap - Peppermint","Natural Oils","Peppermint","8859176069159","150","13-1-6600023582"
+68,"Natural Handmade Cold Process Oil Soap - Coconut","Natural Oils","Coconut","8859176069166","150","13-1-6600023582"
+69,"Natural Handmade Cold Process Oil Soap - Strawberry","Natural Oils","Strawberry","8859176069173","150","13-1-6600023582"
+70,"Natural Handmade Cold Process Oil Soap - Ylang Ylang","Natural Oils","Ylang","8859176069180","150","13-1-6600023582"
+71,"Natural Handmade Cold Process Oil Soap - Ocean","Natural Oils","Ocean","8859176069197","150","13-1-6600023582"
+72,"Natural Handmade Cold Process Oil Soap - Berry","Natural Oils","Berry","8859176069203","150","13-1-6600023582"
+73,"Coconut OIL 220ml","Natural Oils","220ml","8859176082500","150","13-1-6600001698"
+74,"BUBBLE BATH GEL - Berry Bonbon Bay","Bubble Bath Bombs","Bay","8859176078786","260","13-1-6600026468"
+75,"BUBBLE BATH GEL - Bubblegum Breeze","Bubble Bath Bombs","Breeze","8859176078793","260","13-1-6600026468"
+76,"BUBBLE BATH GEL - Candy Floss Clouds","Bubble Bath Bombs","Clouds","8859176078809","260","13-1-6600026468"
+77,"BUBBLE BATH GEL - Caramel Cascade","Bubble Bath Bombs","Cascade","8859176078816","260","13-1-6600026468"
+78,"BUBBLE BATH GEL - Chocolate Chip Cove","Bubble Bath Bombs","Cove","8859176078823","260","13-1-6600026468"
+79,"BUBBLE BATH GEL - Cinnamon Swirl Sea","Bubble Bath Bombs","Sea","8859176078830","260","13-1-6600026468"
+80,"BUBBLE BATH GEL - Cookie Dough Cove","Bubble Bath Bombs","Cove","8859176078847","260","13-1-6600026468"
+81,"BUBBLE BATH GEL - Cupcake Cove","Bubble Bath Bombs","Cove","8859176078854","260","13-1-6600026468"
+82,"BUBBLE BATH GEL - Fizzy Sherbet Shores","Bubble Bath Bombs","Shores","8859176078861","260","13-1-6600026468"
+83,"BUBBLE BATH GEL - Gummy Bear Glide","Bubble Bath Bombs","Glide","8859176078878","260","13-1-6600026468"
+84,"BUBBLE BATH GEL - Jellybean Jubilee","Bubble Bath Bombs","Jubilee","8859176078885","260","13-1-6600026468"
+85,"BUBBLE BATH GEL - Lemon Drop Lagoon","Bubble Bath Bombs","Lagoon","8859176078892","260","13-1-6600026468"
+86,"BUBBLE BATH GEL - Lollipop Lagoon","Bubble Bath Bombs","Lagoon","8859176078908","260","13-1-6600026468"
+87,"BUBBLE BATH GEL - Marshmallow Meadow","Bubble Bath Bombs","Meadow","8859176078915","260","13-1-6600026468"
+88,"BUBBLE BATH GEL - Minty Macaron Marina","Bubble Bath Bombs","Marina","8859176078922","260","13-1-6600026468"
+89,"BUBBLE BATH GEL - Pixie Powder Paradise","Bubble Bath Bombs","Paradise","8859176078939","260","13-1-6600026468"
+90,"BUBBLE BATH GEL - Sprinkle Splash Sanctuary","Bubble Bath Bombs","Sanctuary","8859176078946","260","13-1-6600026468"
+91,"BUBBLE BATH GEL - Strawberry Swirl Stream","Bubble Bath Bombs","Stream","8859176078953","260","13-1-6600026468"
+92,"BUBBLE BATH GEL - Vanilla Velvet Valley","Bubble Bath Bombs","Valley","8859176078960","260","13-1-6600026468"
+93,"SCRUBBY BAR  SOAP COCONUT","Body Care","COCONUT","8859176063522","185","13-1-6400024503"
+94,"SCRUBBY BAR  SOAP JASMINE RICE","Body Care","RICE","8859176063539","185","13-1-6400024503"
+95,"SCRUBBY BAR  SOAP LAVENDER","Body Care","LAVENDER","8859176063546","185","13-1-6400024503"
+96,"SCRUBBY BAR  SOAP LEElawadee","Body Care","LEElawadee","8859176063553","185","13-1-6400024503"
+97,"SCRUBBY BAR  SOAP ROSE","Body Care","ROSE","8859176063560","185","13-1-6400024503"
+98,"SCRUBBY BAR  SOAP VANILLA","Body Care","VANILLA","8859176069302","185","13-1-6400024503"
+99,"SCRUBBY BAR  SOAP MANGO","Body Care","MANGO","8859176069319","185","13-1-6400024503"
+100,"SCRUBBY BAR  SOAP STRAWBERRY","Body Care","STRAWBERRY","8859176069326","185","13-1-6400024503"
+101,"Fruit Picker Soap - Mangosteen","Specialty Soaps","Mangosteen","8859176062259","85","13-1-6400024503"
+102,"Fruit Picker Soap - Lemon","Specialty Soaps","Lemon","8859176062266","85","13-1-6400024503"
+103,"Fruit Picker Soap - Grape","Specialty Soaps","Grape","8859176062273","85","13-1-6400024503"
+104,"Fruit Picker Soap - Calamansi","Specialty Soaps","Calamansi","8859176062280","85","13-1-6400024503"
+105,"Fruit Picker Soap - Mango","Specialty Soaps","Mango","8859176062297","85","13-1-6400024503"
+106,"HERB POWER BAR SOAP - MANGOSTEEN","Natural Oils","MANGOSTEEN","8859176074634","185","13-1-6500029408"
+107,"HERB POWER BAR SOAP - PEPPERMINT","Natural Oils","PEPPERMINT","8859176074641","185","13-1-6500029408"
+108,"HERB POWER BAR SOAP - HONEY","Natural Oils","HONEY","8859176074658","185","13-1-6500029408"
+109,"HERB POWER BAR SOAP - ALOE VERA","Natural Oils","VERA","8859176074665","185","13-1-6500029408"
+110,"HERB POWER BAR SOAP - TUMERIC","Natural Oils","TUMERIC","8859176074672","185","13-1-6500029408"
+111,"HERB POWER BAR SOAP - LEMONGRASS","Natural Oils","LEMONGRASS","8859176074689","185","13-1-6500029408"
+112,"HERB POWER BAR SOAP - COCONUT","Natural Oils","COCONUT","8859176074696","185","13-1-6500029408"
+113,"HERB POWER BAR SOAP - RICE MILK","Natural Oils","MILK","8859176074702","185","13-1-6500029408"
+114,"HERB POWER BAR SOAP - JASMINE","Natural Oils","JASMINE","8859176074719","185","13-1-6500029408"
+115,"HERB POWER BAR SOAP - ROSE","Natural Oils","ROSE","8859176074726","185","13-1-6500029408"
+116,"HERB POWER BAR SOAP - MILK","Natural Oils","MILK","8859176079097","185","13-1-6500029408"
+117,"HERB POWER BAR SOAP - LAVENDER","Natural Oils","LAVENDER","8859176079103","185","13-1-6500029408"
+118,"HERB POWER BAR SOAP - BLOSSOM","Natural Oils","BLOSSOM","8859176079110","185","13-1-6500029408"
+119,"HERB POWER BAR SOAP - STRAWBERRY","Natural Oils","STRAWBERRY","8859176079127","185","13-1-6500029408"
+120,"HERB POWER BAR SOAP - ORANGE","Natural Oils","ORANGE","8859176079134","185","13-1-6500029408"
+121,"HERB POWER BAR SOAP - MANGO","Natural Oils","MANGO","8859176079141","185","13-1-6500029408"
+122,"HERB POWER BAR SOAP - GRAPE","Natural Oils","GRAPE","8859176079158","185","13-1-6500029408"
+123,"HERB POWER BAR SOAP - BANANA","Natural Oils","BANANA","8859176079165","185","13-1-6500029408"
+124,"HERB POWER BAR SOAP - APPLE","Natural Oils","APPLE","8859176079172","185","13-1-6500029408"
+125,"HERB POWER BAR SOAP - PEACH","Natural Oils","PEACH","8859176079189","185","13-1-6500029408"
+126,"HERB POWER BAR SOAP - CHERRY","Natural Oils","CHERRY","8859176079196","185","13-1-6500029408"
+127,"HERB POWER BAR SOAP - BERRY AVOCADO","Natural Oils","AVOCADO","8859176079202","185","13-1-6500029408"
+128,"HERB POWER BAR SOAP - LEMON","Natural Oils","LEMON","8859176079219","185","13-1-6500029408"
+129,"BODY LOTION - Aloe Vera","Other Products","Vera","8859176080513","125","13-1-6500027013"
+130,"BODY LOTION - Blossom","Other Products","Blossom","8859176080520","125","13-1-6500027013"
+131,"BODY LOTION - Banana","Other Products","Banana","8859176080537","125","13-1-6500027013"
+132,"BODY LOTION - BLOSSAM","Other Products","BLOSSAM","8859176080544","125","13-1-6500027013"
+133,"BODY LOTION - Coconut","Other Products","Coconut","8859176080551","125","13-1-6500027013"
+134,"BODY LOTION - Honey","Other Products","Honey","8859176080568","125","13-1-6500027013"
+135,"BODY LOTION - Jasmine","Other Products","Jasmine","8859176080575","125","13-1-6500027013"
+136,"BODY LOTION - Lavender","Other Products","Lavender","8859176080582","125","13-1-6500027013"
+137,"BODY LOTION - Lemongrass","Other Products","Lemongrass","8859176080599","125","13-1-6500027013"
+138,"BODY LOTION - Mango","Other Products","Mango","8859176080605","125","13-1-6500027013"
+139,"BODY LOTION - Rose","Other Products","Rose","8859176080612","125","13-1-6500027013"
+140,"BODY LOTION - Strawberry","Other Products","Strawberry","8859176080629","125","13-1-6500027013"
+141,"BODY LOTION - Vanilla","Other Products","Vanilla","8859176080636","125","13-1-6500027013"
+142,"BODY LOTION - Mint","Other Products","Mint","8859176080643","125","13-1-6500027013"
+143,"BODY LOTION - Vanilla Mint","Other Products","Mint","8859176080650","125","13-1-6500027013"
+144,"MILKY BODY CREAM LOTION - Butterfly","Other Products","Butterfly","8859176013771","225","13-1-6500027013"
+145,"MILKY BODY CREAM LOTION - Berry","Other Products","Berry","8859176013788","225","13-1-6500027013"
+146,"MILKY BODY CREAM LOTION - Lavender","Other Products","Lavender","8859176013795","225","13-1-6500027013"
+147,"MILKY BODY CREAM LOTION - Lemon","Other Products","Lemon","8859176013801","225","13-1-6500027013"
+148,"MILKY BODY CREAM LOTION - Coconut","Other Products","Coconut","8859176013818","225","13-1-6500027013"
+149,"MILKY BODY CREAM LOTION - Mango","Other Products","Mango","8859176013825","225","13-1-6500027013"
+150,"MILKY BODY CREAM LOTION - Rose","Other Products","Rose","8859176013832","225","13-1-6500027013"
+151,"MILKY BODY CREAM LOTION - Jasmine","Other Products","Jasmine","8859176013849","225","13-1-6500027013"
+152,"MILKY BODY CREAM LOTION - Orange","Other Products","Orange","8859176013856","225","13-1-6500027013"
+153,"MILKY BODY CREAM LOTION - Strawberry","Other Products","Strawberry","8859176013863","225","13-1-6500027013"
+154,"MILKY BODY CREAM LOTION - Vanilla","Other Products","Vanilla","8859176013870","225","13-1-6500027013"
+155,"MILKY BODY CREAM LOTION - Mint","Other Products","Mint","8859176013887","225","13-1-6500027013"
+156,"MILKY BODY CREAM LOTION - Peach","Other Products","Peach","8859176013894","225","13-1-6500027013"
+157,"MILKY BODY CREAM LOTION - Grape","Other Products","Grape","8859176013900","225","13-1-6500027013"
+158,"MILKY BODY CREAM LOTION - Apple","Other Products","Apple","8859176013917","225","13-1-6500027013"
+159,"MILKY BODY CREAM LOTION - Cherry","Other Products","Cherry","8859176013924","225","13-1-6500027013"
+160,"MILKY BODY CREAM LOTION - Banana","Other Products","Banana","8859176013931","225","13-1-6500027013"
+161,"MILKY BODY CREAM LOTION - Honey","Other Products","Honey","8859176013948","225","13-1-6500027013"
+162,"MILKY BODY CREAM LOTION - Kiwi","Other Products","Kiwi","8859176013955","225","13-1-6500027013"
+163,"MILKY BODY CREAM LOTION - Lemongrass","Other Products","Lemongrass","8859176013962","225","13-1-
+
+사부타일랜드 제품 가격표
+(중요) 공통적으로 종류별 10개이상씩 주문을 받을 수 있다.
+
+사각비누SQUARE SOAP 100g 
+소매가격 : 65 Baht
+1~100개 : 45 Baht
+101~500 개 : 40 Baht
+500 ~ 1000개 : 30 Baht
+1001 ~ 5000 개 : 25 Baht
+
+팬시FANCY SOAP 100g ~ 110g
+소매가격 : 85 Baht
+1~100개 : 50 Baht
+101~500 개 : 45 Baht
+500 ~ 1000개 : 35 Baht
+1001 ~ 5000 개 : 30 Baht
+
+팬시FANCY SOAP 120g ~ 130g
+소매가격 : 85 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 32 Baht
+
+팬시FANCY SOAP 130g ~ 150g
+소매가격 : 95 Baht
+1~100개 : 55 Baht
+101~500 개 : 50 Baht
+500 ~ 1000개 : 38 Baht
+1001 ~ 5000 개 : 35 Baht
+
+
+원형 블랙박스 프리미엄 100g
+소매가격 : 85 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 32 Baht
+
+버블 배쓰밤 150g
+소매가격 : 125 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 50 Baht
+
