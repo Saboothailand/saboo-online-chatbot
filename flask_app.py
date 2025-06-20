@@ -13,6 +13,51 @@ import hashlib
 import hmac
 import base64
 
+# ✅ 가격 리스트 파일 읽기 함수
+def get_price_list(language='en'):
+    """언어별 price_list_xx.txt 또는 기본 price_list.txt 를 불러오는 함수"""
+    lang_map = {
+        'thai': 'th',
+        'english': 'en',
+        'korean': 'kr',
+        'japanese': 'ja',
+        'german': 'de',
+        'spanish': 'es',
+        'arabic': 'ar',
+        'chinese': 'zh_cn',
+        'taiwanese': 'zh_tw',
+        'vietnamese': 'vi',
+        'myanmar': 'my',
+        'khmer': 'km',
+        'russian': 'ru',
+        'french': 'fr'
+    }
+    lang_code = lang_map.get(language, 'en')
+    filename = f"price_list_{lang_code}.txt"
+
+    try:
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if len(content) > 20:
+                    logger.info(f"✅ '{language}' 가격 정보를 {filename} 에서 로드했습니다.")
+                    return content
+    except Exception as e:
+        logger.error(f"❌ {filename} 파일 읽기 오류: {e}")
+
+    # fallback 기본 price_list.txt
+    try:
+        if os.path.exists("price_list.txt"):
+            with open("price_list.txt", 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                logger.info("✅ 기본 price_list.txt 를 사용합니다.")
+                return content
+    except Exception as e:
+        logger.error(f"❌ price_list.txt 파일 읽기 오류: {e}")
+
+    return "❌ 현재 가격 리스트 정보를 불러올 수 없습니다."
+
+
 # ✅ .env 환경변수 로드
 load_dotenv()
 
@@ -576,6 +621,51 @@ def chat():
         # 언어 감지
         detected_language = detect_user_language(user_message)
         
+        # ✅ 가격 키워드 감지 - 다국어 지원
+        price_keywords = [
+            # 한국어
+            '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
+            # 영어
+            'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
+            # 태국어
+            'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
+            # 일본어
+            '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
+            # 중국어
+            '价格', '价钱', '多少钱', '费用', '成本', '定价',
+            # 스페인어
+            'precio', 'precios', 'costo', 'cuanto', 'tarifa',
+            # 독일어
+            'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
+            # 프랑스어
+            'prix', 'coût', 'combien', 'tarif',
+            # 러시아어
+            'цена', 'цены', 'стоимость', 'сколько'
+        ]
+        
+        # 가격 관련 키워드가 포함되어 있는지 확인
+        if any(keyword.lower() in user_message.lower() for keyword in price_keywords):
+            logger.info(f"💰 가격 정보 요청 감지 - 언어: {detected_language}")
+            
+            # 언어별 가격 정보 가져오기
+            price_text = get_price_list(language=detected_language)
+            
+            # 로그 저장용 HTML 태그 제거
+            clean_response_for_log = re.sub(r'<[^>]+>', '', price_text)
+            save_chat(user_message, clean_response_for_log)
+            
+            # 가격 정보에 하이퍼링크 추가
+            price_text_with_links = add_hyperlinks(price_text)
+            
+            return jsonify({
+                "reply": price_text_with_links,
+                "is_html": True,  # 하이퍼링크가 포함되어 있을 수 있으므로 HTML로 처리
+                "user_language": detected_language,
+                "data_source": "price_list",
+                "request_type": "price_inquiry"
+            })
+        
+        # ✅ 기존 GPT 호출 (가격 관련이 아닌 일반 질문)
         bot_response = get_gpt_response(user_message)
         
         # 로그에는 HTML 태그를 제거하고 저장
@@ -597,7 +687,8 @@ def chat():
             "is_html": True,
             "user_language": detected_language,
             "language_file_used": language_file_used,
-            "data_source": "language_files_only"
+            "data_source": "language_files_only",
+            "request_type": "general_inquiry"
         })
         
     except Exception as e:
@@ -609,7 +700,8 @@ def chat():
         return jsonify({
             "reply": fallback_response,
             "is_html": True,
-            "error": "fallback_mode"
+            "error": "fallback_mode",
+            "request_type": "error_fallback"
         })
 
 @app.route('/line', methods=['POST'])
@@ -637,6 +729,39 @@ def line_webhook():
                 # 언어 감지
                 detected_language = detect_user_language(user_text)
                 logger.info(f"👤 사용자 {user_id[:8]} ({detected_language}): {user_text}")
+                
+                # ✅ LINE에서도 가격 키워드 감지
+                price_keywords = [
+                    # 한국어
+                    '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
+                    # 영어
+                    'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
+                    # 태국어
+                    'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
+                    # 일본어
+                    '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
+                    # 중국어
+                    '价格', '价钱', '多少钱', '费用', '成本', '定价',
+                    # 스페인어
+                    'precio', 'precios', 'costo', 'cuanto', 'tarifa',
+                    # 독일어
+                    'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
+                    # 프랑스어
+                    'prix', 'coût', 'combien', 'tarif',
+                    # 러시아어
+                    'цена', 'цены', 'стоимость', 'сколько'
+                ]
+                
+                # 가격 관련 키워드 확인
+                if any(keyword.lower() in user_text.lower() for keyword in price_keywords):
+                    logger.info(f"💰 LINE에서 가격 정보 요청 감지 - 언어: {detected_language}")
+                    price_text = get_price_list(language=detected_language)
+                    # LINE은 HTML을 지원하지 않으므로 태그 제거
+                    clean_price_response = re.sub(r'<[^>]+>', '', price_text)
+                    
+                    if send_line_message(reply_token, clean_price_response):
+                        save_chat(user_text, clean_price_response, user_id)
+                    continue
                 
                 # 환영 인사 키워드 확인
                 welcome_keywords = ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", 
