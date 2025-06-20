@@ -1,9 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SABOO THAILAND Chatbot</title>
+    <title>SABOO THAILAND - แชทบอท</title>
+    
+    <!-- ✅ SEO 메타 태그 -->
+    <meta name="description" content="Saboo Thailand Natural Soap & Home Spa Products Expert Chatbot - Get instant help with our premium fruit-shaped soaps, bath bombs, and spa products. 24/7 multilingual support.">
+    <meta name="keywords" content="Saboo Thailand, Natural Soap, Fruit Soap, Bath Bomb, Home Spa, Chatbot, สบู่ธรรมชาติ, สบู่รูปผลไม้, บาธบอมบ์">
+    <meta name="author" content="Saboo Thailand">
+    
+    <!-- ✅ 카카오톡 특화 메타 태그 (우선순위 높게 배치) -->
+    <meta property="og:title" content="SABOO THAILAND 챗봇 🧼">
+    <meta property="og:description" content="천연비누 전문가와 24시간 상담하세요! 과일비누, 바스봄, 홈스파 제품 정보 🌸">
+    <meta property="og:image" content="https://saboothailand.com/images/chatbot_bear.jpg">
+    <meta property="og:url" content="https://chatbot.saboothailand.com">
+    <meta property="og:type" content="website">
+    
+    <!-- ✅ 카카오톡 추가 최적화 -->
+    <meta name="title" content="SABOO THAILAND 챗봇 🧼">
+    <meta name="description" content="천연비누 전문가와 24시간 상담하세요! 과일비누, 바스봄, 홈스파 제품 정보 🌸">
+    
+    <!-- ✅ Open Graph 상세 설정 -->
+    <meta property="og:image:secure_url" content="https://saboothailand.com/images/chatbot_bear.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="600">
+    <meta property="og:image:alt" content="Saboo Thailand 챗봇 곰돌이">
+    <meta property="og:site_name" content="Saboo Thailand">
+    <meta property="og:locale" content="ko_KR">
+    
+    <!-- ✅ 추가 카카오톡 호환 태그 -->
+    <meta property="kakao:title" content="SABOO THAILAND 챗봇">
+    <meta property="kakao:description" content="🧼 천연비누 전문가 상담 🌸">
+    <meta property="kakao:image" content="https://saboothailand.com/images/chatbot_bear.jpg">
+    <meta property="kakao:image:secure_url" content="https://saboothailand.com/images/chatbot_bear.jpg">
+    
+    <!-- ✅ Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SABOO THAILAND 챗봇 🧼">
+    <meta name="twitter:description" content="🧼 천연비누 전문가와 24시간 상담하세요! 🌸">
+    <meta name="twitter:image" content="https://saboothailand.com/images/chatbot_bear.jpg">
+    <meta name="twitter:image:alt" content="Saboo Thailand 챗봇">
+    
+    <!-- ✅ 추가 메타 태그 -->
+    <meta property="al:web:url" content="https://chatbot.saboothailand.com">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- ✅ 파비콘 추가 -->
+    <link rel="shortcut icon" type="image/x-icon" href="https://saboothailand.com/img/favicon/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="https://saboothailand.com/img/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="57x57" href="https://saboothailand.com/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="https://saboothailand.com/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="https://saboothailand.com/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="https://saboothailand.com/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="https://saboothailand.com/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="https://saboothailand.com/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="https://saboothailand.com/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://saboothailand.com/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://saboothailand.com/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://saboothailand.com/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://saboothailand.com/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="https://saboothailand.com/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://saboothailand.com/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="https://saboothailand.com/img/favicon/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ff69b4">
+    <meta name="msapplication-TileImage" content="https://saboothailand.com/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ff69b4">
     <style>
         * {
             margin: 0;
@@ -13,31 +76,75 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
+            background: linear-gradient(135deg, #ff69b4, #f55eaf, #ed68a4);
+            min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
         .chat-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
+        /* ✅ 로고 섹션 스타일 추가 */
+        .logo-section {
+            background: white;
+            padding: 8px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+        }
+
+        .logo-placeholder {
+            width: 140px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+        }
+
+        /* ✅ 로고 링크 스타일 추가 */
+        .logo-placeholder a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+        }
+
+        .logo-placeholder a:hover .logo-image {
+            transform: scale(1.05);
+        }
+
+        .logo-placeholder a:hover {
+            opacity: 0.8;
+        }
+
         .chat-header {
-            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            background: linear-gradient(90deg, #ff54aa, #ff4ead);
             color: white;
             padding: 20px;
             text-align: center;
-            position: relative;
+            border-radius: 20px 20px 0 0;
         }
 
         .chat-header h1 {
@@ -48,23 +155,6 @@
         .chat-header p {
             font-size: 14px;
             opacity: 0.9;
-        }
-
-        .status-indicator {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 12px;
-            height: 12px;
-            background: #00ff00;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
 
         .chat-messages {
@@ -78,6 +168,7 @@
             margin-bottom: 15px;
             display: flex;
             align-items: flex-start;
+            animation: fadeIn 0.3s ease-in;
         }
 
         .message.user {
@@ -89,20 +180,35 @@
             padding: 12px 16px;
             border-radius: 18px;
             word-wrap: break-word;
+            line-height: 1.4;
         }
 
         .message.user .message-content {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #ff74ba, #ff4dacfe);
             color: white;
-            border-bottom-right-radius: 6px;
+            border-bottom-right-radius: 4px;
         }
 
         .message.bot .message-content {
             background: white;
             color: #333;
-            border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 6px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* ✅ 에러 메시지 스타일 */
+        .message.bot.error .message-content {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        /* ✅ 폴백 메시지 스타일 */
+        .message.bot.fallback .message-content {
+            background: #e7f3ff;
+            border-color: #74b9ff;
+            color: #0984e3;
         }
 
         .message.bot .message-content a {
@@ -110,44 +216,22 @@
             text-decoration: underline;
         }
 
-        .message.bot .message-content a:hover {
-            color: #ff1493;
-        }
-
-        .timestamp {
-            font-size: 11px;
-            color: #666;
-            margin-top: 5px;
-            text-align: right;
-        }
-
-        .message.bot .timestamp {
-            text-align: left;
-        }
-
         .chat-input-container {
             padding: 20px;
             background: white;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .chat-input-wrapper {
+            border-top: 1px solid #e9ecef;
             display: flex;
             gap: 10px;
-            align-items: flex-end;
         }
 
         .chat-input {
             flex: 1;
             padding: 12px 16px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #e9ecef;
             border-radius: 25px;
+            font-size: 16px;
             outline: none;
-            font-size: 14px;
-            resize: none;
-            min-height: 20px;
-            max-height: 100px;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s ease;
         }
 
         .chat-input:focus {
@@ -155,17 +239,15 @@
         }
 
         .send-button {
-            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            border-radius: 25px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
         }
 
         .send-button:hover {
@@ -173,51 +255,86 @@
         }
 
         .send-button:disabled {
-            background: #ccc;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
         .typing-indicator {
             display: none;
-            padding: 12px 16px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 18px;
-            border-bottom-left-radius: 6px;
-            max-width: 70%;
             margin-bottom: 15px;
         }
 
         .typing-dots {
-            display: flex;
-            gap: 4px;
-            align-items: center;
+            display: inline-block;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .typing-dots span {
-            width: 8px;
             height: 8px;
+            width: 8px;
             background: #ff69b4;
             border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out both;
         }
 
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
 
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+        /* ✅ 연결 상태 표시기 */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
         }
 
-        .error-message {
-            background: #ffebee;
-            color: #c62828;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #c62828;
+        .connection-status.online {
+            background: #00b894;
+            color: white;
+        }
+
+        .connection-status.offline {
+            background: #e17055;
+            color: white;
+        }
+
+        .connection-status.error {
+            background: #fdcb6e;
+            color: #2d3436;
+        }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .welcome-message {
@@ -231,48 +348,73 @@
             .chat-container {
                 height: 100vh;
                 border-radius: 0;
-                margin: 0;
+                max-width: 100%;
+            }
+            
+            .chat-header {
+                border-radius: 0;
             }
             
             .message-content {
                 max-width: 85%;
             }
-            
-            .chat-header h1 {
-                font-size: 20px;
-            }
-        }
 
-        .language-selector {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            padding: 5px 10px;
-            color: white;
-            font-size: 12px;
+            /* ✅ 모바일에서 로고 크기 조정 */
+            .logo-section {
+                padding: 6px 12px;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .logo-placeholder {
+                width: 110px;
+                height: 35px;
+            }
+
+            .connection-status {
+                top: 5px;
+                right: 5px;
+                font-size: 10px;
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="language-selector">🌐 Multi-Language</div>
-            <div class="status-indicator"></div>
-            <h1>🧴 SABOO THAILAND</h1>
-            <p>Natural Soap & Bath Products Chatbot</p>
-        </div>
+    <!-- ✅ 연결 상태 표시기 -->
+    <div id="connectionStatus" class="connection-status">
+        Connected
+    </div>
 
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                <p>👋 สวัสดีค่ะ! Welcome to SABOO THAILAND!</p>
-                <p>Send a message to start chatting with our AI assistant</p>
-                <p>💬 Type in Thai, English, or Korean</p>
+    <div class="chat-container">
+        <!-- ✅ 로고 섹션 추가 -->
+        <div class="logo-section">
+            <div class="logo-placeholder">
+                <a href="https://www.saboothailand.com" target="_blank" rel="noopener noreferrer" 
+                   title="Visit Saboo Thailand Website">
+                    <img src="https://www.saboothailand.com/images/logo.png" 
+                         alt="Saboo Thailand Logo - Natural Soap & Home Spa Products" 
+                         class="logo-image"
+                         loading="lazy"
+                         onerror="this.onerror=null; this.src='https://www.saboothailand.com/images/saboo-logo.png'; if(this.complete && this.naturalHeight === 0) { this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ff69b4;font-size:18px;font-weight:bold;text-decoration:none;\'>🧼 SABOO THAILAND</div>'; }">
+                </a>
             </div>
         </div>
 
+        <div class="chat-header">
+            <h1>🧼 SABOO THAILAND</h1>
+            <p>Natural Soap & Home Spa Products Expert</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <p>💕 Hello! Welcome to SABOO THAILAND</p>
+                <p>Your trusted partner for natural soap & home spa products</p>
+            </div>
+        </div>
+        
         <div class="typing-indicator" id="typingIndicator">
             <div class="typing-dots">
                 <span></span>
@@ -280,21 +422,16 @@
                 <span></span>
             </div>
         </div>
-
+        
         <div class="chat-input-container">
-            <div class="chat-input-wrapper">
-                <textarea 
-                    id="chatInput" 
-                    class="chat-input" 
-                    placeholder="Type your message here... (Thai/English/Korean)"
-                    rows="1"
-                ></textarea>
-                <button id="sendButton" class="send-button">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M2 12L22 2L13 21L11 13L2 12Z" fill="currentColor"/>
-                    </svg>
-                </button>
-            </div>
+            <input 
+                type="text" 
+                id="chatInput" 
+                class="chat-input" 
+                placeholder="Type your message here..."
+                autocomplete="off"
+            >
+            <button id="sendButton" class="send-button">Send</button>
         </div>
     </div>
 
@@ -303,109 +440,234 @@
         const chatInput = document.getElementById('chatInput');
         const sendButton = document.getElementById('sendButton');
         const typingIndicator = document.getElementById('typingIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
 
-        // Auto-resize textarea
-        chatInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-        });
+        // ✅ 전역 변수
+        let retryCount = 0;
+        let maxRetries = 3;
+        let isOnline = navigator.onLine;
+        let lastUserMessage = '';
 
-        // Send message on Enter (but allow Shift+Enter for new line)
-        chatInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        // ✅ 언어 감지 함수
+        function detectLanguage(text) {
+            const thaiPattern = /[\u0E00-\u0E7F]/;
+            const koreanPattern = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
+            
+            if (thaiPattern.test(text)) return 'thai';
+            if (koreanPattern.test(text)) return 'korean';
+            return 'english';
+        }
+
+        // ✅ 영어 폴백 메시지 생성
+        function getEnglishFallbackMessage(error = '') {
+            const messages = [
+                `I apologize, but we're experiencing technical difficulties at the moment. 
+
+Here's some basic information about SABOO THAILAND:
+- We're Thailand's first natural fruit-shaped soap manufacturer since 2008
+- Store location: Mixt Chatuchak, 2nd Floor, Bangkok
+- Phone: 02-159-9880, 085-595-9565
+- Website: www.saboothailand.com
+- Shopee: shopee.co.th/thailandsoap
+
+Please try again later or contact us directly. Thank you for your understanding! 😊`,
+
+                `Sorry for the inconvenience! Our chat system is having temporary issues.
+
+SABOO THAILAND - Quick Info:
+🧼 Natural fruit-shaped soaps since 2008
+🏪 Store: Mixt Chatuchak, 2nd Floor
+📞 Phone: 02-159-9880
+🌐 Website: www.saboothailand.com
+🛒 Online: shopee.co.th/thailandsoap
+
+Feel free to contact us directly for assistance! 💕`,
+
+                `We're currently experiencing some technical problems, but I'd still like to help!
+
+About SABOO THAILAND:
+- Thailand's pioneer in fruit-shaped natural soaps
+- Established 2008, exported to 20+ countries
+- Store: Mixt Chatuchak Mall, 2nd Floor, Bangkok
+- Contact: 02-159-9880 or saboothailand@gmail.com
+
+You can also visit our website or Shopee store for more information! 😊`
+            ];
+            
+            return messages[retryCount % messages.length];
+        }
+
+        // ✅ 연결 상태 업데이트
+        function updateConnectionStatus(status, message = '') {
+            const statusEl = connectionStatus;
+            statusEl.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'online':
+                    statusEl.textContent = '● Connected';
+                    statusEl.style.display = 'none'; // 정상시에는 숨김
+                    break;
+                case 'offline':
+                    statusEl.textContent = '● Offline';
+                    statusEl.style.display = 'block';
+                    break;
+                case 'error':
+                    statusEl.textContent = '● Error';
+                    statusEl.style.display = 'block';
+                    break;
             }
+            
+            if (status !== 'online') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // ✅ 온라인/오프라인 감지
+        window.addEventListener('online', () => {
+            isOnline = true;
+            updateConnectionStatus('online');
+            retryCount = 0;
         });
 
-        sendButton.addEventListener('click', sendMessage);
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateConnectionStatus('offline');
+        });
 
-        function sendMessage() {
+        // ✅ 메시지 전송 (개선된 에러 처리)
+        async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
 
-            // Add user message to chat
-            addMessage(message, 'user');
-            
-            // Clear input and disable send button
-            chatInput.value = '';
-            chatInput.style.height = 'auto';
-            sendButton.disabled = true;
-            
-            // Show typing indicator
-            showTypingIndicator();
+            lastUserMessage = message;
+            const userLanguage = detectLanguage(message);
 
-            // Send to backend
-            fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: message }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                hideTypingIndicator();
-                
-                if (data.error) {
-                    addErrorMessage('Sorry, there was an error processing your message. Please try again.');
-                } else {
-                    addMessage(data.reply, 'bot', data.is_html);
-                    
-                    // Update status info if available
-                    if (data.last_data_update) {
-                        console.log('Last data update:', data.last_data_update);
-                    }
-                    if (data.user_language) {
-                        console.log('Detected language:', data.user_language);
-                    }
-                }
-                
-                sendButton.disabled = false;
-                chatInput.focus();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                hideTypingIndicator();
-                addErrorMessage('Connection error. Please check your internet connection and try again.');
-                sendButton.disabled = false;
-                chatInput.focus();
-            });
-        }
-
-        function addMessage(content, sender, isHtml = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            
-            if (isHtml && sender === 'bot') {
-                contentDiv.innerHTML = content;
-            } else {
-                contentDiv.textContent = content;
+            // 오프라인 체크
+            if (!isOnline) {
+                addMessage('You appear to be offline. Please check your internet connection and try again.', 'bot', false, 'error');
+                return;
             }
 
-            const timestamp = document.createElement('div');
-            timestamp.className = 'timestamp';
-            timestamp.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            // 사용자 메시지 표시
+            addMessage(message, 'user');
+            chatInput.value = '';
+            sendButton.disabled = true;
+            
+            // 타이핑 표시
+            showTypingIndicator();
 
-            messageDiv.appendChild(contentDiv);
-            messageDiv.appendChild(timestamp);
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                hideTypingIndicator();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 응답 검증
+                    if (data.reply && data.reply.trim()) {
+                        const isHtml = data.is_html || false;
+                        const messageType = data.error === 'fallback_mode' ? 'fallback' : 'normal';
+                        addMessage(data.reply, 'bot', isHtml, messageType);
+                        retryCount = 0; // 성공시 재시도 카운트 리셋
+                        updateConnectionStatus('online');
+                    } else {
+                        throw new Error('Empty response received');
+                    }
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideTypingIndicator();
+                handleChatError(error, userLanguage);
+            } finally {
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        // ✅ 채팅 에러 처리
+        function handleChatError(error, userLanguage) {
+            retryCount++;
+            updateConnectionStatus('error');
+            
+            let errorMessage = '';
+            
+            if (error.name === 'AbortError') {
+                errorMessage = 'Request timeout. The server is taking too long to respond.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Network connection failed. Please check your internet connection.';
+            } else if (error.message.includes('Server error: 5')) {
+                errorMessage = 'Server is currently unavailable. Please try again in a few moments.';
+            } else {
+                errorMessage = 'An unexpected error occurred. Please try again.';
+            }
+
+            // 언어별 에러 메시지 (간단한 것만)
+            if (userLanguage === 'thai' && retryCount <= 1) {
+                if (error.name === 'AbortError') {
+                    addMessage('ขออภัยค่ะ ระบบใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้งค่ะ 🙏', 'bot', false, 'error');
+                } else {
+                    addMessage('ขออภัยค่ะ เกิดปัญหาทางเทคนิค กรุณาลองใหม่อีกครั้งค่ะ 🙏', 'bot', false, 'error');
+                }
+            } else {
+                // 영어 폴백 (재시도 횟수가 많거나 기본값)
+                const fallbackMessage = getEnglishFallbackMessage(errorMessage);
+                addMessage(fallbackMessage, 'bot', false, 'fallback');
+            }
+
+            // 재시도 제안
+            if (retryCount <= maxRetries) {
+                setTimeout(() => {
+                    if (lastUserMessage) {
+                        addMessage(`Would you like me to try processing your message "${lastUserMessage}" again? Just click Send or press Enter.`, 'bot', false, 'error');
+                        chatInput.value = lastUserMessage;
+                        chatInput.focus();
+                    }
+                }, 2000);
+            }
+        }
+
+        // ✅ 메시지 추가 (타입 지원)
+        function addMessage(text, sender, isHtml = false, messageType = 'normal') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (messageType !== 'normal') {
+                messageDiv.classList.add(messageType);
+            }
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            
+            if (isHtml && sender === 'bot') {
+                messageContent.innerHTML = text;
+            } else {
+                messageContent.textContent = text;
+            }
+            
+            messageDiv.appendChild(messageContent);
             chatMessages.appendChild(messageDiv);
-
-            // Scroll to bottom
+            
+            // 스크롤
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function addErrorMessage(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-            chatMessages.appendChild(errorDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
+        // ✅ 타이핑 표시기 함수들
         function showTypingIndicator() {
             typingIndicator.style.display = 'block';
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -415,36 +677,47 @@
             typingIndicator.style.display = 'none';
         }
 
-        // Focus on input when page loads
-        window.addEventListener('load', function() {
-            chatInput.focus();
-            
-            // Check server health
-            fetch('/health')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Server status:', data);
-                    if (data.status === 'healthy') {
-                        console.log('✅ Server is healthy');
-                        console.log('📊 Sheet data length:', data.sheet_data_length);
-                        console.log('📄 Doc data length:', data.doc_data_length);
-                        console.log('🔄 Last update:', data.last_data_update);
-                    }
-                })
-                .catch(error => {
-                    console.error('Health check failed:', error);
-                });
+        // ✅ 이벤트 리스너
+        sendButton.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         });
 
-        // Add some sample messages for demonstration
-        function addSampleWelcome() {
-            setTimeout(() => {
-                addMessage('สวัสดีค่ะ! ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ 😊\n\nเราเป็นผู้ผลิตสบู่ธรรมชาติรูปผลไม้ครั้งแรกในไทย มีอะไรให้ช่วยเหลือคะ?', 'bot', true);
-            }, 1000);
-        }
+        // ✅ 초기화
+        chatInput.focus();
+        updateConnectionStatus('online');
+        
+        // ✅ 환영 메시지 (개선됨)
+        setTimeout(() => {
+            const welcomeMsg = document.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.style.display = 'none';
+            }
+            
+            const welcomeText = `Hello! 💕 Welcome to SABOO THAILAND!
 
-        // Uncomment the line below to show a welcome message
-        // addSampleWelcome();
+🧴 We are Thailand's leading manufacturer and distributor of natural soaps and bubble bath home spa products, specializing in unique fruit-shaped soaps.
+
+🌸 Established since 2008 • Exported to 20+ countries
+
+How can I help you with our premium spa products today? 😊
+
+(💡 You can chat with me in English, Thai, or Korean!)`;
+            
+            addMessage(welcomeText, 'bot');
+        }, 1000);
+
+        // ✅ 주기적 연결 상태 체크
+        setInterval(() => {
+            if (navigator.onLine !== isOnline) {
+                isOnline = navigator.onLine;
+                updateConnectionStatus(isOnline ? 'online' : 'offline');
+            }
+        }, 10000);
     </script>
 </body>
 </html>
