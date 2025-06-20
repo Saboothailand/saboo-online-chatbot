@@ -12,8 +12,6 @@ import threading
 import hashlib
 import hmac
 import base64
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 
 # ✅ .env 환경변수 로드
 load_dotenv()
@@ -57,97 +55,9 @@ if not LINE_TOKEN:
 if not LINE_SECRET:
     logger.error("❌ LINE_SECRET 또는 LINE_CHANNEL_SECRET을 찾을 수 없습니다!")
 
-# ✅ Google API 설정 (Sheets만 사용)
-GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
-UPDATE_INTERVAL_MINUTES = int(os.getenv("UPDATE_INTERVAL_MINUTES", "5"))
-
-# ✅ 전역 변수: 시트 데이터, 해시, 언어별 캐시
-current_sheet_text = ""
-sheet_hash = ""
-last_update_time = datetime.now()
-scheduler = None
+# ✅ 전역 변수: 언어별 캐시만 사용
 language_data_cache = {}  # 언어별 회사 소개 정보를 메모리에 저장해두는 캐시
-
-# ✅ 기본 회사 정보 (폴백용)
-DEFAULT_COMPANY_INFO = """
-SABOO THAILAND ข้อมูลฉบับสมบูรณ์
-
-ข้อมูลพื้นฐานของบริษัท:
-- SABOO THAILAND เป็นบริษัทที่มุ่งเน้นการออกแบบ เป็นบริษัทแรกที่สร้างสรรค์สบู่รูปผลไม้ในประเทศไทย
-- ก่อตั้งขึ้นในปี 2008 เป็นบริษัทผลิตสบู่ธรรมชาติชั้นนำของไทย
-- เป็นแบรนด์ระดับโลกที่ส่งออกไปกว่า 20 ประเทศทั่วโลก
-
-สำนักงานและร้านค้า:
-- สำนักงานใหญ่ (โรงงาน): 55/20 หมู่ 4 ตำบลบึงคำพร้อย อำเภอลำลูกกา จังหวัดปทุมธานี 12150
-- SABOO THAILAND SHOP: มิกซ์ จตุจักร ชั้น 2 เลขที่ 8 ถนนกำแพงเพชร 3 จตุจักร กรุงเทพฯ 10900
-- โทรศัพท์: 02-159-9880, 085-595-9565 / 062-897-8962
-
-ข้อมูลการติดต่อ:
-- อีเมล: saboothailand@gmail.com
-- เว็บไซต์: www.saboothailand.com
-- ช้อปปิ้งมอลล์: www.saboomall.com
-
-ช่องทางออนไลน์:
-- Shopee: https://shopee.co.th/thailandsoap
-- Lazada: https://www.lazada.co.th/shop/saboo-thailand
-- YouTube: https://www.youtube.com/@saboothailand.official
-- Instagram: https://www.instagram.com/saboothailand.official/
-- TikTok: https://www.tiktok.com/@saboothailand.official
-
-ผลิตภัณฑ์หลัก:
-- สบู่ธรรมชาติ (สบู่รูปผลไม้)
-- ผลิตภัณฑ์อาบน้ำ (บาธบอมบ์ บับเบิลบาธ)
-- สเปรย์ปรับอากาศ
-- น้ำมันกระจายกลิ่น
-- สครับ ชุดอาบน้ำ
-"""
-
-# ✅ Google Sheets API에서 데이터 가져오기
-def fetch_google_sheet_data():
-    """Google Sheets에서 제품 데이터를 가져옵니다. 실패 시 폴백 데이터를 사용합니다."""
-    logger.info("🔍 Google Sheets 데이터 가져오기를 시도합니다...")
-    try:
-        # 방법 1: 서비스 계정 (gspread) 사용
-        if GOOGLE_CREDENTIALS_JSON and GOOGLE_SHEET_ID:
-            try:
-                import gspread
-                from oauth2client.service_account import ServiceAccountCredentials
-                creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-                scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-                creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-                gc = gspread.authorize(creds)
-                sheet = gc.open_by_key(GOOGLE_SHEET_ID).sheet1
-                all_values = sheet.get_all_values()
-                sheet_content = "\n".join([" | ".join(filter(None, map(str.strip, row))) for row in all_values if any(row)])
-                logger.info(f"✅ gspread를 통해 Google Sheets 데이터를 가져왔습니다. (크기: {len(sheet_content)}자)")
-                return sheet_content.strip()
-            except ImportError:
-                logger.warning("⚠️ gspread 라이브러리가 설치되지 않았습니다. REST API를 시도합니다.")
-            except Exception as e:
-                logger.error(f"❌ gspread 방식 실패, 다른 방법을 시도합니다. 오류: {e}")
-
-        # 방법 2: API 키 (REST API) 사용
-        if GOOGLE_API_KEY and GOOGLE_SHEET_ID:
-            try:
-                url = f"https://sheets.googleapis.com/v4/spreadsheets/{GOOGLE_SHEET_ID}/values/A:Z?key={GOOGLE_API_KEY}"
-                response = requests.get(url, timeout=15)
-                if response.status_code == 200:
-                    values = response.json().get('values', [])
-                    sheet_content = "\n".join([" | ".join(filter(None, map(str.strip, row))) for row in values if any(row)])
-                    logger.info(f"✅ REST API를 통해 Google Sheets 데이터를 가져왔습니다. (크기: {len(sheet_content)}자)")
-                    return sheet_content.strip()
-                else:
-                    logger.error(f"❌ Google Sheets REST API 오류: {response.status_code} - {response.text}")
-            except Exception as e:
-                logger.error(f"❌ REST API 요청 실패: {e}")
-
-        logger.warning("⚠️ 유효한 Google Sheets 설정이 없습니다. 하드코딩된 폴백 데이터를 사용합니다.")
-        return DEFAULT_COMPANY_INFO
-    except Exception as e:
-        logger.error(f"❌ fetch_google_sheet_data 함수에서 심각한 오류 발생: {e}")
-        return DEFAULT_COMPANY_INFO
+last_update_time = datetime.now()
 
 # ✅ 언어별 회사 정보 로드 (캐싱 기능 포함) - 확장된 버전
 def fetch_company_info(user_language):
@@ -221,50 +131,12 @@ Feel free to ask us anything! 😊
     language_data_cache[user_language] = default_info
     return default_info
 
-# ✅ 데이터 해시 계산
-def calculate_hash(data):
-    if not data: return ""
-    return hashlib.md5(data.encode('utf-8')).hexdigest()
-
-# ✅ Google 데이터 업데이트 확인 및 갱신
-def check_and_update_google_data():
-    """주기적으로 Google Sheets 데이터의 변경사항을 확인하고 업데이트합니다."""
-    global current_sheet_text, sheet_hash, last_update_time
-    logger.info("🔄 데이터 업데이트를 확인합니다...")
-    try:
-        new_sheet_data = fetch_google_sheet_data()
-        if new_sheet_data and len(new_sheet_data.strip()) > 50:
-            new_sheet_hash = calculate_hash(new_sheet_data)
-            if new_sheet_hash != sheet_hash:
-                logger.info("📊 Google Sheets 데이터가 업데이트되었습니다!")
-                current_sheet_text = new_sheet_data
-                sheet_hash = new_sheet_hash
-                last_update_time = datetime.now()
-            else:
-                logger.info("📊 Google Sheets 데이터는 변경되지 않았습니다.")
-        else:
-            logger.warning("⚠️ 새로운 시트 데이터가 유효하지 않습니다.")
-    except Exception as e:
-        logger.error(f"❌ check_and_update_google_data 함수에서 오류 발생: {e}")
-
-# ✅ 초기 데이터 로드
+# ✅ 초기 데이터 로드 (구글 서비스 제거)
 def initialize_data():
-    """앱 시작 시 필요한 데이터를 미리 로드합니다."""
-    global current_sheet_text, sheet_hash
+    """앱 시작 시 필요한 언어별 데이터를 미리 로드합니다."""
     logger.info("🚀 앱 초기화를 시작합니다...")
     
-    # 1. 환경 변수 확인 및 로그
-    logger.info(f"🔧 환경 변수 확인:")
-    logger.info(f"   - GOOGLE_SHEET_ID: {'✅' if GOOGLE_SHEET_ID else '❌'}")
-    logger.info(f"   - GOOGLE_API_KEY: {'✅' if GOOGLE_API_KEY else '❌'}")
-    logger.info(f"   - GOOGLE_CREDENTIALS_JSON: {'✅' if GOOGLE_CREDENTIALS_JSON else '❌'}")
-    
-    # 2. 구글 시트 데이터 로드
-    current_sheet_text = fetch_google_sheet_data()
-    sheet_hash = calculate_hash(current_sheet_text)
-    logger.info(f"📊 초기 시트 데이터 로드 완료. (크기: {len(current_sheet_text)}자)")
-    
-    # 3. 주요 언어 회사 정보 미리 캐싱
+    # 주요 언어 회사 정보 미리 캐싱
     common_languages = ['english', 'korean', 'thai', 'japanese', 'chinese', 'spanish', 'german']
     for lang in common_languages:
         try:
@@ -273,30 +145,6 @@ def initialize_data():
             logger.warning(f"⚠️ {lang} 언어 정보 미리 로드 실패: {e}")
     
     logger.info(f"✅ 캐시된 언어: {list(language_data_cache.keys())}")
-
-# ✅ 스케줄러 설정
-def setup_scheduler():
-    """백그라운드에서 주기적으로 데이터 업데이트를 실행할 스케줄러를 설정합니다."""
-    global scheduler
-    try:
-        if scheduler and scheduler.running:
-            scheduler.shutdown()
-            
-        scheduler = BackgroundScheduler(daemon=True)
-        scheduler.add_job(
-            func=check_and_update_google_data, 
-            trigger=IntervalTrigger(minutes=UPDATE_INTERVAL_MINUTES),
-            id='google_data_update', 
-            name='Check Google Data Updates', 
-            replace_existing=True,
-            max_instances=1
-        )
-        scheduler.start()
-        logger.info(f"⏰ 스케줄러가 시작되었습니다. {UPDATE_INTERVAL_MINUTES}분마다 업데이트를 확인합니다.")
-        return scheduler
-    except Exception as e:
-        logger.error(f"❌ 스케줄러 설정 실패: {e}")
-        return None
 
 # ✅ 시스템 메시지 정의
 SYSTEM_MESSAGE = """
@@ -472,9 +320,9 @@ def add_hyperlinks(text):
         logger.error(f"❌ 하이퍼링크 변환 중 오류 발생: {e}")
         return text
 
-# ✅ GPT 응답 생성 함수
+# ✅ GPT 응답 생성 함수 (구글 서비스 제거, 언어별 파일만 사용)
 def get_gpt_response(user_message):
-    """필요한 모든 데이터를 조합하여 OpenAI GPT 모델로 최종 답변을 생성합니다."""
+    """언어별 파일 데이터만을 사용하여 OpenAI GPT 모델로 최종 답변을 생성합니다."""
     user_language = detect_user_language(user_message)
     logger.info(f"🌐 감지된 사용자 언어: {user_language}")
     
@@ -485,17 +333,16 @@ def get_gpt_response(user_message):
             logger.error("❌ OpenAI client가 없습니다.")
             return get_english_fallback_response(user_message, "OpenAI service unavailable")
         
-        # 데이터 유효성 검사
-        if not current_sheet_text or len(current_sheet_text.strip()) < 50:
-            logger.warning("⚠️ 시트 데이터가 불충분합니다. 폴백을 사용합니다.")
-            return get_english_fallback_response(user_message, "Product data temporarily unavailable")
+        # 회사 정보 유효성 검사
+        if not company_info or len(company_info.strip()) < 50:
+            logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
+            return get_english_fallback_response(user_message, "Company data temporarily unavailable")
         
         prompt = f"""
-[제품 정보 테이블 - Google Sheets 제공, 마지막 업데이트: {last_update_time.strftime('%Y-%m-%d %H:%M:%S')}]
-{current_sheet_text[:5000]}
+[회사 정보 및 제품 정보 - 언어: {user_language}]
+{company_info}
 
-[회사 소개 - 언어: {user_language}]
-{company_info[:3000]}
+(중요: 고객 질문이 배송/운송, 제품, 회사 정보와 관련된 경우 반드시 위 회사 정보 텍스트에서 정보를 찾을 것!)
 
 [감지된 사용자 언어: {user_language}]
 [사용자 질문]
@@ -624,14 +471,9 @@ def health():
         "openai_client": "connected" if client else "disconnected",
         "line_token": "configured" if LINE_TOKEN else "missing",
         "line_secret": "configured" if LINE_SECRET else "missing",
-        "google_api": "configured" if GOOGLE_API_KEY else "missing",
-        "google_credentials": "configured" if GOOGLE_CREDENTIALS_JSON else "missing",
-        "google_sheet_id": "configured" if GOOGLE_SHEET_ID else "missing",
-        "last_sheet_update": last_update_time.isoformat(),
-        "update_interval_minutes": UPDATE_INTERVAL_MINUTES,
-        "sheet_data_length": len(current_sheet_text),
         "cached_languages": list(language_data_cache.keys()),
-        "scheduler_running": scheduler.running if scheduler else False
+        "data_source": "language_files_only",
+        "google_services": "disabled"
     })
 
 @app.route('/language-status')
@@ -680,7 +522,8 @@ def language_status():
         return jsonify({
             "language_status": status,
             "total_cached": len(language_data_cache),
-            "cache_summary": {lang: len(content) for lang, content in language_data_cache.items()}
+            "cache_summary": {lang: len(content) for lang, content in language_data_cache.items()},
+            "data_source": "language_files_only"
         })
         
     except Exception as e:
@@ -702,51 +545,22 @@ def clear_language_cache():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/trigger-update')
-def trigger_update():
-    """수동으로 데이터 업데이트 트리거"""
+@app.route('/reload-language-data')
+def reload_language_data():
+    """언어별 데이터 다시 로드"""
     try:
-        old_sheet_hash = sheet_hash
+        # 캐시 초기화
+        global language_data_cache
+        language_data_cache.clear()
         
-        check_and_update_google_data()
+        # 데이터 다시 로드
+        initialize_data()
         
         return jsonify({
             "status": "success",
-            "timestamp": datetime.now().isoformat(),
-            "sheet_updated": sheet_hash != old_sheet_hash,
-            "last_update": last_update_time.isoformat(),
-            "new_sheet_hash": sheet_hash,
-            "cached_languages": list(language_data_cache.keys())
-        })
-    except Exception as e:
-        logger.error(f"❌ 수동 업데이트 트리거 오류: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route('/debug-data')
-def debug_data():
-    """데이터 상태 디버깅"""
-    try:
-        fresh_sheet = fetch_google_sheet_data()
-        
-        return jsonify({
-            "current_data": {
-                "sheet_length": len(current_sheet_text),
-                "sheet_hash": sheet_hash,
-                "sheet_preview": current_sheet_text[:300] + "...",
-            },
-            "fresh_data": {
-                "sheet_length": len(fresh_sheet) if fresh_sheet else 0,
-                "sheet_hash": calculate_hash(fresh_sheet) if fresh_sheet else None,
-                "sheet_preview": fresh_sheet[:300] + "..." if fresh_sheet else "No data",
-            },
-            "comparison": {
-                "sheet_data_different": (calculate_hash(fresh_sheet) != sheet_hash) if fresh_sheet else "Cannot compare",
-            },
-            "language_cache": {
-                "total_languages": len(language_data_cache),
-                "languages": list(language_data_cache.keys()),
-                "cache_sizes": {lang: len(content) for lang, content in language_data_cache.items()}
-            }
+            "message": "Language data reloaded successfully.",
+            "cached_languages": list(language_data_cache.keys()),
+            "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -782,7 +596,8 @@ def chat():
             "reply": bot_response,
             "is_html": True,
             "user_language": detected_language,
-            "language_file_used": language_file_used
+            "language_file_used": language_file_used,
+            "data_source": "language_files_only"
         })
         
     except Exception as e:
@@ -879,7 +694,6 @@ def initialize_once():
             if not app_initialized:
                 logger.info("🎯 첫 요청 감지, 앱 초기화를 진행합니다...")
                 initialize_data()
-                setup_scheduler()
                 app_initialized = True
 
 if __name__ == '__main__':
@@ -887,18 +701,20 @@ if __name__ == '__main__':
     if not os.getenv('RAILWAY_ENVIRONMENT'):
         logger.info("🚀 개발 모드이므로 직접 초기화를 실행합니다...")
         initialize_data()
-        setup_scheduler()
         app_initialized = True
     
     port = int(os.environ.get("PORT", 5000))
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
+    logger.info("📂 데이터 소스: 언어별 파일만 사용 (Google 서비스 비활성화)")
     
     try:
         # use_reloader=False는 개발 모드에서 초기화가 두 번 실행되는 것을 방지
         app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=not debug_mode)
+    except KeyboardInterrupt:
+        logger.info("🛑 서버 종료 요청을 받았습니다.")
+    except Exception as e:
+        logger.error(f"❌ 서버 실행 중 오류 발생: {e}")
     finally:
-        if scheduler and scheduler.running:
-            scheduler.shutdown()
-            logger.info("🛑 스케줄러 종료 완료")
+        logger.info("🔚 서버가 정상적으로 종료되었습니다.")
