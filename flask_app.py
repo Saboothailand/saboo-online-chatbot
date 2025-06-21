@@ -13,49 +13,25 @@ import hashlib
 import hmac
 import base64
 
-# ✅ 가격 리스트 파일 읽기 함수
+# ✅ 가격 리스트 파일 읽기 함수 (통합 버전)
 def get_price_list(language='en'):
-    """언어별 price_list_xx.txt 또는 기본 price_list.txt 를 불러오는 함수"""
-    lang_map = {
-        'thai': 'th',
-        'english': 'en',
-        'korean': 'kr',
-        'japanese': 'ja',
-        'german': 'de',
-        'spanish': 'es',
-        'arabic': 'ar',
-        'chinese': 'zh_cn',
-        'taiwanese': 'zh_tw',
-        'vietnamese': 'vi',
-        'myanmar': 'my',
-        'khmer': 'km',
-        'russian': 'ru',
-        'french': 'fr'
-    }
-    lang_code = lang_map.get(language, 'en')
-    filename = f"price_list_{lang_code}.txt"
-
-    try:
-        if os.path.exists(filename):
-            with open(filename, 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                if len(content) > 20:
-                    logger.info(f"✅ '{language}' 가격 정보를 {filename} 에서 로드했습니다.")
-                    return content
-    except Exception as e:
-        logger.error(f"❌ {filename} 파일 읽기 오류: {e}")
-
-    # fallback 기본 price_list.txt
+    """모든 언어 통합 price_list.txt 파일을 불러오는 함수"""
     try:
         if os.path.exists("price_list.txt"):
             with open("price_list.txt", 'r', encoding='utf-8') as f:
                 content = f.read().strip()
-                logger.info("✅ 기본 price_list.txt 를 사용합니다.")
-                return content
+                if len(content) > 20:
+                    logger.info(f"✅ '{language}' 언어 요청에 대해 통합 price_list.txt 를 로드했습니다.")
+                    return content
+                else:
+                    logger.warning("⚠️ price_list.txt 파일이 너무 짧습니다 (20자 미만).")
+                    return "❌ 가격 정보가 충분하지 않습니다. 관리자에게 문의해주세요."
+        else:
+            logger.error("❌ price_list.txt 파일을 찾을 수 없습니다.")
+            return "❌ 가격 리스트 파일을 찾을 수 없습니다. 관리자에게 문의해주세요."
     except Exception as e:
         logger.error(f"❌ price_list.txt 파일 읽기 오류: {e}")
-
-    return "❌ 현재 가격 리스트 정보를 불러올 수 없습니다."
+        return f"❌ 가격 정보를 불러오는 중 오류가 발생했습니다: {str(e)}"
 
 # ✅ 메신저 / 웹용 줄바꿈 처리 함수
 def format_text_for_messenger(text):
