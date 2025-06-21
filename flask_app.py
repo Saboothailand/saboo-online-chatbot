@@ -57,6 +57,25 @@ def get_price_list(language='en'):
 
     return "❌ 현재 가격 리스트 정보를 불러올 수 없습니다."
 
+# ✅ 메신저 / 웹용 줄바꿈 처리 함수
+def format_text_for_messenger(text):
+    """웹/메신저용: \n → <br> 로 변환"""
+    try:
+        text = text.replace("\n", "<br>")
+        return text
+    except Exception as e:
+        logger.error(f"❌ 메신저용 줄바꿈 변환 오류: {e}")
+        return text
+
+# ✅ LINE 용 줄바꿈 처리 함수
+def format_text_for_line(text):
+    """LINE 용: \n → \n\n 로 변환"""
+    try:
+        text = text.replace("\n", "\n\n")
+        return text
+    except Exception as e:
+        logger.error(f"❌ LINE용 줄바꿈 변환 오류: {e}")
+        return text
 
 # ✅ .env 환경변수 로드
 load_dotenv()
@@ -518,7 +537,8 @@ def health():
         "line_secret": "configured" if LINE_SECRET else "missing",
         "cached_languages": list(language_data_cache.keys()),
         "data_source": "language_files_only",
-        "google_services": "disabled"
+        "google_services": "disabled",
+        "linebreak_functions": "enabled"
     })
 
 @app.route('/language-status')
@@ -650,12 +670,15 @@ def chat():
             # 언어별 가격 정보 가져오기
             price_text = get_price_list(language=detected_language)
             
+            # ✅ 웹/메신저용 줄바꿈 처리
+            formatted_price_text = format_text_for_messenger(price_text)
+            
             # 로그 저장용 HTML 태그 제거
-            clean_response_for_log = re.sub(r'<[^>]+>', '', price_text)
+            clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_price_text)
             save_chat(user_message, clean_response_for_log)
             
             # 가격 정보에 하이퍼링크 추가
-            price_text_with_links = add_hyperlinks(price_text)
+            price_text_with_links = add_hyperlinks(formatted_price_text)
             
             return jsonify({
                 "reply": price_text_with_links,
@@ -668,8 +691,11 @@ def chat():
         # ✅ 기존 GPT 호출 (가격 관련이 아닌 일반 질문)
         bot_response = get_gpt_response(user_message)
         
+        # ✅ 웹/메신저용 줄바꿈 처리
+        formatted_response = format_text_for_messenger(bot_response)
+        
         # 로그에는 HTML 태그를 제거하고 저장
-        clean_response_for_log = re.sub(r'<[^>]+>', '', bot_response)
+        clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_response)
         save_chat(user_message, clean_response_for_log)
         
         # 언어 코드 매핑
@@ -683,7 +709,7 @@ def chat():
         language_file_used = f"company_info_{lang_code}.txt"
         
         return jsonify({
-            "reply": bot_response,
+            "reply": formatted_response,
             "is_html": True,
             "user_language": detected_language,
             "language_file_used": language_file_used,
@@ -697,8 +723,10 @@ def chat():
             user_message if 'user_message' in locals() else "general inquiry", 
             f"Web chat system error: {str(e)[:100]}"
         )
+        # ✅ 폴백 응답에도 줄바꿈 처리 적용
+        formatted_fallback = format_text_for_messenger(fallback_response)
         return jsonify({
-            "reply": fallback_response,
+            "reply": formatted_fallback,
             "is_html": True,
             "error": "fallback_mode",
             "request_type": "error_fallback"
@@ -756,8 +784,10 @@ def line_webhook():
                 if any(keyword.lower() in user_text.lower() for keyword in price_keywords):
                     logger.info(f"💰 LINE에서 가격 정보 요청 감지 - 언어: {detected_language}")
                     price_text = get_price_list(language=detected_language)
-                    # LINE은 HTML을 지원하지 않으므로 태그 제거
-                    clean_price_response = re.sub(r'<[^>]+>', '', price_text)
+                    
+                    # ✅ LINE용 줄바꿈 처리 후 HTML 태그 제거
+                    formatted_price_text = format_text_for_line(price_text)
+                    clean_price_response = re.sub(r'<[^>]+>', '', formatted_price_text)
                     
                     if send_line_message(reply_token, clean_price_response):
                         save_chat(user_text, clean_price_response, user_id)
@@ -781,8 +811,9 @@ def line_webhook():
                 else:
                     response_text = get_gpt_response(user_text)
                 
-                # LINE은 HTML을 지원하지 않으므로 태그 제거
-                clean_response = re.sub(r'<[^>]+>', '', response_text)
+                # ✅ LINE용 줄바꿈 처리 후 HTML 태그 제거
+                formatted_response = format_text_for_line(response_text)
+                clean_response = re.sub(r'<[^>]+>', '', formatted_response)
                 
                 if send_line_message(reply_token, clean_response):
                     save_chat(user_text, clean_response, user_id)
@@ -833,6 +864,7 @@ if __name__ == '__main__':
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
     logger.info("📂 데이터 소스: 언어별 파일만 사용 (Google 서비스 비활성화)")
+    logger.info("🌈 줄바꿈 처리 기능: 웹용 <br>, LINE용 \\n\\n 지원")
     
     try:
         # use_reloader=False는 개발 모드에서 초기화가 두 번 실행되는 것을 방지
