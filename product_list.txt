@@ -1,3 +1,189 @@
+
+
+SABOO THAILAND PRODUCT CATALOG - CHATBOT Q&A FORMAT
+GENERAL PRODUCT INFORMATION
+Q: How many products does SABOO Thailand offer?
+A: SABOO Thailand offers over 319 unique products across multiple categories including bath bombs, body care, soaps, and specialty items.
+Q: What are the main product categories?
+A: Our main categories include:
+
+Bubble Bath Bombs (31 products)
+Body Care Products (20 products)
+Specialty Soaps and Bath Products (268+ products)
+Seasonal and themed collections
+
+BUBBLE BATH BOMBS & BATH GELS
+Q: What bubble bath products do you have?
+A: We offer an extensive range of bubble bath gels and bombs with unique themed scents:
+Sweet Treats Collection:
+
+Berry Bonbon Bay
+Bubblegum Breeze
+Candy Floss Clouds
+Caramel Cascade
+Chocolate Chip Cove
+Cinnamon Swirl Sea
+Cookie Dough Cove
+Cupcake Cove
+Gummy Bear Glide
+Jellybean Jubilee
+Lemon Drop Lagoon
+Lollipop Lagoon
+Marshmallow Meadow
+Minty Macaron Marina
+
+Classic Scents:
+
+Apple, Avocado, Banana, Blossom, Cherry, Coconut, Grape, Jasmine, Lavender, Lemon, Lime, Mango, Orange, Peach, Rose, Strawberry
+
+Q: Do you have themed bath bombs for children?
+A: Yes! We have special collections perfect for kids:
+
+Animal-themed series (Bear, Duck, Elephant, Dinosaur)
+Monster series with fun colors
+Jungle animal collection
+Holiday themed products (Halloween, Christmas)
+
+BODY CARE PRODUCTS
+Q: What body care products are available?
+A: Our body care line includes:
+Body Cream Scrubs:
+
+Berry Avocado Scent
+Coconut Scent
+Mango Scent
+Passion Goat Milk Scent
+Tamarind Scent
+
+Natural Salt Scrubs:
+
+Blossom Scent
+Lemon Turmeric Scent
+Lemongrass Scent
+Ocean Scent
+Vanilla Mint Scent
+
+Scrubby Bar Soaps:
+
+Coconut
+Jasmine Rice
+Lavender
+Leelawadee
+Rose
+
+Q: What makes your scrub products special?
+A: Our scrubs combine natural ingredients with beautiful Thai-inspired scents. They provide gentle exfoliation while moisturizing and leaving your skin fragrant.
+SPECIALTY PRODUCTS
+Q: Do you have specialty or seasonal items?
+A: Yes! We offer:
+Compress Balls (Thai Herbal):
+
+Lemongrass
+Mangosteen
+Peppermint
+Pomegranate
+Turmeric & Ginger
+
+Fruit Picker Soap Collection:
+
+Calamansi
+Grape
+Lemon
+Mango
+Mangosteen
+
+Seasonal Items:
+
+Christmas Tree Strawberry
+Halloween Apple
+Halloween Orange
+
+Natural Oils:
+
+Coconut Oil 220ml
+
+Q: What are compress balls?
+A: Compress balls are traditional Thai herbal products made with natural herbs and spices. They're used for aromatherapy and relaxation.
+PRODUCT SIZES AND PACKAGING
+Q: What sizes are your products available in?
+A: Our products come in various sizes:
+
+Bath bombs: typically 150g
+Bath powders: 100g
+Body creams and scrubs: various sizes
+Oils: 220ml bottles
+Bar soaps: standard bar size
+
+INGREDIENTS AND SAFETY
+Q: Are SABOO products safe?
+A: Yes, all SABOO Thailand products are:
+
+FDA registered with proper certification numbers
+Made with quality ingredients
+Safe for regular use
+Suitable for most skin types
+
+Q: Do you use natural ingredients?
+A: Yes, many of our products feature natural ingredients including:
+
+Natural salt for scrubs
+Herbal extracts for compress balls
+Coconut oil
+Traditional Thai herbs and botanicals
+Natural fruit essences
+
+SCENT PROFILES
+Q: What scent families do you offer?
+A: We offer several scent categories:
+Fruity: Apple, Mango, Strawberry, Coconut, Lemon, Orange
+Floral: Rose, Jasmine, Lavender, Blossom, Leelawadee
+Herbal: Lemongrass, Turmeric, Peppermint, Ginger
+Sweet: Various dessert and candy-inspired scents
+Fresh: Ocean, Mint, Vanilla combinations
+Q: What does Leelawadee smell like?
+A: Leelawadee (Plumeria) is a classic Thai floral scent - sweet, exotic, and tropical with a creamy, intoxicating fragrance.
+Q: Do you have unisex scents?
+A: Yes! Many of our scents are unisex including:
+
+Ocean, Coconut, Lemon, Peppermint
+Herbal scents like Lemongrass
+Fresh combinations like Vanilla Mint
+
+USAGE RECOMMENDATIONS
+Q: How do I use bath bombs?
+A: Simply drop the bath bomb into warm running water and watch it fizz and dissolve, releasing fragrance and creating bubbles for a luxurious bath experience.
+Q: How should I use body scrubs?
+A: Apply to damp skin in circular motions, focusing on rough areas like elbows and knees. Rinse thoroughly. Use 2-3 times per week for best results.
+Q: How do I store these products?
+A: Store in a cool, dry place away from direct sunlight. Keep packaging sealed to maintain freshness and prevent moisture absorption.
+GIFT AND BULK OPTIONS
+Q: Do you offer gift sets?
+A: Yes, we have various themed collections that make perfect gifts, including seasonal sets and scent-coordinated collections.
+Q: Are bulk quantities available?
+A: Yes, we offer bulk pricing for quantities of 50, 100, 500, 1000, and 5000 pieces depending on the product.
+BRAND INFORMATION
+Q: What makes SABOO Thailand special?
+A: SABOO Thailand specializes in:
+
+Authentic Thai-inspired scents and ingredients
+High-quality, safe formulations
+Creative themed collections
+Traditional herbal products
+Affordable luxury bath and body care
+FDA-approved safety standards
+
+Q: Where can I learn more about specific products?
+A: Feel free to ask about any specific product, scent, or category. I can provide detailed information about ingredients, usage, and recommendations based on your preferences.
+
+Chatbot Guidelines:
+
+Always maintain enthusiasm about product quality and variety
+Offer to help customers find products based on their scent preferences
+Mention Thai heritage and natural ingredients when relevant
+Be ready to provide detailed information about any specific product mentioned
+Suggest complementary products when appropriate
+Emphasize safety and quality certifications
+
 # SABOO THAILAND 제품 리스트
 
 ## BUBBLE BATH BOMB - BLACK PACKAGE
@@ -858,3 +1044,49 @@ COMPRESS BALL - HERBAL - MANGOSTEEN 100g
 - COMPRESS BALL - HERBAL - POMEGRANATE 100g
 - COMPRESS BALL - HERBAL - TURMERIC & GINGER 100g
 - COMPRESS BALL - HERBAL - MANGOSTEEN 100g
+
+사부타일랜드 제품 가격표
+(중요) 공통적으로 종류별 10개이상씩 주문을 받을 수 있다.
+
+사각비누SQUARE SOAP 100g 
+소매가격 : 65 Baht
+1~100개 : 45 Baht
+101~500 개 : 40 Baht
+500 ~ 1000개 : 30 Baht
+1001 ~ 5000 개 : 25 Baht
+
+팬시FANCY SOAP 100g ~ 110g
+소매가격 : 85 Baht
+1~100개 : 50 Baht
+101~500 개 : 45 Baht
+500 ~ 1000개 : 35 Baht
+1001 ~ 5000 개 : 30 Baht
+
+팬시FANCY SOAP 120g ~ 130g
+소매가격 : 85 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 32 Baht
+
+팬시FANCY SOAP 130g ~ 150g
+소매가격 : 95 Baht
+1~100개 : 55 Baht
+101~500 개 : 50 Baht
+500 ~ 1000개 : 38 Baht
+1001 ~ 5000 개 : 35 Baht
+
+원형 블랙박스 프리미엄 100g
+소매가격 : 85 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 32 Baht
+
+버블 배쓰밤 150g
+소매가격 : 125 Baht
+1~100개 : 52 Baht
+101~500 개 : 48 Baht
+500 ~ 1000개 : 36 Baht
+1001 ~ 5000 개 : 50 Baht
+
