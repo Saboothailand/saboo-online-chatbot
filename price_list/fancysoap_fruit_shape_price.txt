@@ -1,0 +1,57 @@
+FANCY SOAP PRICE LIST
+FRUIT SHAPE SOAPS
+MANGO A FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+MANGO B FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BANANA A FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BANANA B FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BANANA C FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+COCONUT A FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+COCONUT B FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+CHERRY FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+CORN FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+DRAGON FRUIT FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+STRAWBERRY FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PINEAPPLE A FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PINEAPPLE B FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PINEAPPLE C FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PINEAPPLE D FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+GUAVA FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+CALAMANSI FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+ROSE APPLE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+DURIAN FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+MANGOSTEEN FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PEACH FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+POMELO FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LYCHEE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+RONG PONG FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+ORANGE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LEMON FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+WATERMELON FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+GREEN APPLE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+RED APPLE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+MELON FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PUG SOON FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+PAPAYA FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+GRAPE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+AVOCADO FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+CUSTARD APPLE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+POMEGRANATE FANCY SOAP FRUIT SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+CARROT FANCY SOAP VEGETABLE SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LEMONGRASS FANCY SOAP VEGETABLE SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BELL PEPPER FANCY SOAP VEGETABLE SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+HONEY FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BERGAMOT FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+COFFEE FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+BIRD NEST FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+JASMINE RICE FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LEAF FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+NONI FANCY SOAP SPECIAL SHAPE 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LAVENDER ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+OCEAN ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+JASMINE ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+ROSE ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+MANGO ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+LEMON ELEPHANT HANGING FANCY SOAP 100G - Retail: 85 Baht | 1-100pcs: 52 Baht | 101-500pcs: 48 Baht | 501-1000pcs: 36 Baht | 1001-5000pcs: 32 Baht
+MANGO NATURAL FANCY HANGING SOAP 95G - Retail: 90 Baht | 1-100pcs: 55 Baht | 101-500pcs: 51 Baht | 501-1000pcs: 38 Baht | 1001-5000pcs: 34 Baht
+COCONUT NATURAL FANCY HANGING SOAP 95G - Retail: 90 Baht | 1-100pcs: 55 Baht | 101-500pcs: 51 Baht | 501-1000pcs: 38 Baht | 1001-5000pcs: 34 Baht
+LEELAWADEE NATURAL FANCY HANGING SOAP 95G - Retail: 90 Baht | 1-100pcs: 55 Baht | 101-500pcs: 51 Baht | 501-1000pcs: 38 Baht | 1001-5000pcs: 34 Baht
