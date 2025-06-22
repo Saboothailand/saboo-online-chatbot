@@ -48,6 +48,17 @@ PRODUCT_KEYWORDS = {
     'gel': ['gel', '젤', 'เจล'],
     'gift': ['gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต'],
     
+    # Price keywords - 가격 관련 키워드도 제품 검색에 포함
+    'price': ['price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
+             '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
+             'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
+             '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
+             '价格', '价钱', '多少钱', '费用', '成本', '定价',
+             'precio', 'precios', 'costo', 'cuanto', 'tarifa',
+             'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
+             'prix', 'coût', 'combien', 'tarif',
+             'цена', 'цены', 'стоимость', 'сколько'],
+    
     # Sizes
     '100g': ['100g', '100 g', '100gram'],
     '150g': ['150g', '150 g', '150gram'],
@@ -240,11 +251,17 @@ def get_error_message(language: str) -> str:
     return messages.get(language, messages['english'])
 
 def is_product_search_query(user_message: str) -> bool:
-    """사용자 메시지가 제품 검색 쿼리인지 판단"""
+    """사용자 메시지가 제품 검색 쿼리인지 판단 (가격 키워드도 포함)"""
     try:
         user_message_lower = user_message.lower()
         
-        # 제품 검색 관련 키워드
+        # 제품 카테고리 키워드 확인 (가격 키워드 포함)
+        for category_keywords in PRODUCT_KEYWORDS.values():
+            for keyword in category_keywords:
+                if keyword.lower() in user_message_lower:
+                    return True
+        
+        # 추가 검색 지시어 확인
         search_indicators = [
             # 영어
             'product', 'products', 'item', 'items', 'what do you have', 'what products',
@@ -259,19 +276,8 @@ def is_product_search_query(user_message: str) -> bool:
             '产品', '商品', '什么', '寻找', '搜索'
         ]
         
-        # 제품 카테고리 키워드
-        product_categories = []
-        for category_keywords in PRODUCT_KEYWORDS.values():
-            product_categories.extend(category_keywords)
-        
-        # 검색 지시어 확인
         for indicator in search_indicators:
             if indicator in user_message_lower:
-                return True
-        
-        # 제품 카테고리 키워드 확인
-        for keyword in product_categories:
-            if keyword.lower() in user_message_lower:
                 return True
         
         return False
@@ -282,25 +288,10 @@ def is_product_search_query(user_message: str) -> bool:
 
 # ✅ 기존 함수들을 유지하면서 제품 검색 기능 통합
 
-# 가격 리스트 파일 읽기 함수 (기존 유지)
-def get_price_list(language='en'):
-    """모든 언어 통합 price_list.txt 파일을 불러오는 함수"""
-    try:
-        if os.path.exists("price_list.txt"):
-            with open("price_list.txt", 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                if len(content) > 20:
-                    logger.info(f"✅ '{language}' 언어 요청에 대해 통합 price_list.txt 를 로드했습니다.")
-                    return content
-                else:
-                    logger.warning("⚠️ price_list.txt 파일이 너무 짧습니다 (20자 미만).")
-                    return "❌ 가격 정보가 충분하지 않습니다. 관리자에게 문의해주세요."
-        else:
-            logger.error("❌ price_list.txt 파일을 찾을 수 없습니다.")
-            return "❌ 가격 리스트 파일을 찾을 수 없습니다. 관리자에게 문의해주세요."
-    except Exception as e:
-        logger.error(f"❌ price_list.txt 파일 읽기 오류: {e}")
-        return f"❌ 가격 정보를 불러오는 중 오류가 발생했습니다: {str(e)}"
+# ❌ get_price_list 함수 제거 (더 이상 사용하지 않음)
+# def get_price_list(language='en'):
+#     """이 함수는 더 이상 사용하지 않습니다. get_product_info()를 사용하세요."""
+#     pass
 
 # 메신저 / 웹용 줄바꿈 처리 함수 (기존 유지)
 def format_text_for_messenger(text):
@@ -971,49 +962,9 @@ def chat():
         
         detected_language = detect_user_language(user_message)
         
-        # ✅ 가격 키워드 감지 - 다국어 지원
-        price_keywords = [
-            # 한국어
-            '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
-            # 영어
-            'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
-            # 태국어
-            'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
-            # 일본어
-            '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
-            # 중국어
-            '价格', '价钱', '多少钱', '费用', '成本', '定价',
-            # 스페인어
-            'precio', 'precios', 'costo', 'cuanto', 'tarifa',
-            # 독일어
-            'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
-            # 프랑스어
-            'prix', 'coût', 'combien', 'tarif',
-            # 러시아어
-            'цена', 'цены', 'стоимость', 'сколько'
-        ]
-        
-        # 1. 일반적인 가격 관련 키워드 확인 (기존 price_list.txt 사용)
-        if any(keyword.lower() in user_message.lower() for keyword in price_keywords):
-            logger.info(f"💰 일반 가격 정보 요청 감지 - 언어: {detected_language}")
-            
-            price_text = get_price_list(language=detected_language)
-            formatted_price_text = format_text_for_messenger(price_text)
-            clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_price_text)
-            save_chat(user_message, clean_response_for_log)
-            price_text_with_links = add_hyperlinks(formatted_price_text)
-            
-            return jsonify({
-                "reply": price_text_with_links,
-                "is_html": True,
-                "user_language": detected_language,
-                "data_source": "price_list",
-                "request_type": "general_price_inquiry"
-            })
-        
-        # 2. 제품별 상세 검색 확인
-        elif is_product_search_query(user_message):
-            logger.info(f"🔍 제품 검색 요청 감지 - 언어: {detected_language}")
+        # ✅ 모든 제품/가격 관련 쿼리를 제품 검색으로 통합 처리
+        if is_product_search_query(user_message):
+            logger.info(f"🔍 제품/가격 검색 요청 감지 - 언어: {detected_language}")
             
             product_response = get_product_info(user_message, detected_language)
             formatted_response = format_text_for_messenger(product_response)
@@ -1026,10 +977,10 @@ def chat():
                 "is_html": True,
                 "user_language": detected_language,
                 "data_source": "product_search",
-                "request_type": "product_search_inquiry"
+                "request_type": "product_or_price_inquiry"
             })
         
-        # 3. 기존 GPT 호출 (일반 질문)
+        # ✅ 기존 GPT 호출 (일반 질문)
         bot_response = get_gpt_response(user_message)
         formatted_response = format_text_for_messenger(bot_response)
         clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_response)
@@ -1090,32 +1041,9 @@ def line_webhook():
                 detected_language = detect_user_language(user_text)
                 logger.info(f"👤 사용자 {user_id[:8]} ({detected_language}): {user_text}")
                 
-                # ✅ 가격 키워드 확인
-                price_keywords = [
-                    '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
-                    'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
-                    'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
-                    '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
-                    '价格', '价钱', '多少钱', '费用', '成本', '定价',
-                    'precio', 'precios', 'costo', 'cuanto', 'tarifa',
-                    'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
-                    'prix', 'coût', 'combien', 'tarif',
-                    'цена', 'цены', 'стоимость', 'сколько'
-                ]
-                
-                if any(keyword.lower() in user_text.lower() for keyword in price_keywords):
-                    logger.info(f"💰 LINE에서 일반 가격 정보 요청 감지 - 언어: {detected_language}")
-                    price_text = get_price_list(language=detected_language)
-                    formatted_price_text = format_text_for_line(price_text)
-                    clean_price_response = re.sub(r'<[^>]+>', '', formatted_price_text)
-                    
-                    if send_line_message(reply_token, clean_price_response):
-                        save_chat(user_text, clean_price_response, user_id)
-                    continue
-                
-                # ✅ 제품 검색 확인
-                elif is_product_search_query(user_text):
-                    logger.info(f"🔍 LINE에서 제품 검색 요청 감지 - 언어: {detected_language}")
+                # ✅ 모든 제품/가격 관련 쿼리를 제품 검색으로 통합 처리
+                if is_product_search_query(user_text):
+                    logger.info(f"🔍 LINE에서 제품/가격 검색 요청 감지 - 언어: {detected_language}")
                     product_info = get_product_info(user_text, detected_language)
                     formatted_product_text = format_text_for_line(product_info)
                     clean_product_response = re.sub(r'<[^>]+>', '', formatted_product_text)
@@ -1194,8 +1122,8 @@ if __name__ == '__main__':
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
-    logger.info("📂 데이터 소스: 언어별 파일 + 제품 검색 기능")
-    logger.info("🔍 제품 검색: price_list 폴더에서 실시간 검색 지원")
+    logger.info("📂 데이터 소스: company_info 폴더 + price_list 폴더 개별 파일 검색")
+    logger.info("🔍 제품 검색: price_list 폴더에서 실시간 검색 지원 (통합 price_list.txt 제거)")
     logger.info("🌈 줄바꿈 처리 기능: 웹용 <br>, LINE용 \\n\\n 지원")
     
     try:
