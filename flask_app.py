@@ -12,8 +12,277 @@ import threading
 import hashlib
 import hmac
 import base64
+import glob
+from typing import Dict, List, Tuple, Optional
 
-# ✅ 가격 리스트 파일 읽기 함수 (통합 버전)
+# ✅ 제품 데이터 캐시 추가
+product_data_cache = {}
+product_last_update = None
+
+# ✅ 제품 검색을 위한 키워드 매핑
+PRODUCT_KEYWORDS = {
+    # Bath Bombs
+    'bathbomb': ['bath bomb', 'bathbomb', '배스봄', '바스봄', 'บาธบอม', 'บอม', 'ลูกบอลอาบน้ำ'],
+    'bubble': ['bubble', '버블', 'บับเบิล', 'ฟอง'],
+    'fizzy': ['fizzy', '피지', 'ฟิซซี่', 'ฟิซ'],
+    
+    # Soap Types
+    'soap': ['soap', '비누', 'สบู่'],
+    'fancy': ['fancy', '팬시', 'แฟนซี'],
+    'natural': ['natural', '천연', 'ธรรมชาติ'],
+    'handmade': ['handmade', '수제', 'ทำมือ'],
+    
+    # Shapes
+    'fruit': ['fruit', '과일', 'ผลไม้'],
+    'flower': ['flower', '꽃', 'ดอกไม้'],
+    'animal': ['animal', '동물', 'สัตว์'],
+    'dinosaur': ['dinosaur', '공룡', 'ไดโนเสาร์'],
+    'elephant': ['elephant', '코끼리', 'ช้าง'],
+    'duck': ['duck', '오리', 'เป็ด'],
+    'bear': ['bear', '곰', 'หมี'],
+    
+    # Other Products
+    'scrub': ['scrub', '스크럽', 'สครับ'],
+    'perfume': ['perfume', '향수', 'น้ำหอม'],
+    'spray': ['spray', '스프레이', 'สเปรย์'],
+    'gel': ['gel', '젤', 'เจล'],
+    'gift': ['gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต'],
+    
+    # Sizes
+    '100g': ['100g', '100 g', '100gram'],
+    '150g': ['150g', '150 g', '150gram'],
+    '185g': ['185g', '185 g', '185gram'],
+    '500ml': ['500ml', '500 ml'],
+    '250ml': ['250ml', '250 ml'],
+    '25ml': ['25ml', '25 ml']
+}
+
+# ✅ 제품 파일 로더 함수들
+def load_product_files():
+    """price_list 폴더에서 모든 제품 파일을 로드하여 캐시에 저장"""
+    global product_data_cache, product_last_update
+    
+    try:
+        price_list_dir = "price_list"
+        if not os.path.exists(price_list_dir):
+            logger.warning(f"⚠️ {price_list_dir} 폴더를 찾을 수 없습니다.")
+            return False
+        
+        product_data_cache.clear()
+        
+        # 모든 .txt 파일 찾기
+        txt_files = glob.glob(os.path.join(price_list_dir, "*.txt"))
+        logger.info(f"📂 {len(txt_files)}개의 제품 파일을 발견했습니다.")
+        
+        for file_path in txt_files:
+            try:
+                filename = os.path.basename(file_path)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    if content:
+                        product_data_cache[filename] = content
+                        logger.debug(f"✅ {filename} 로드 완료 ({len(content)} 문자)")
+            except Exception as e:
+                logger.error(f"❌ {file_path} 로드 실패: {e}")
+        
+        product_last_update = datetime.now()
+        logger.info(f"✅ 총 {len(product_data_cache)}개의 제품 파일이 캐시에 로드되었습니다.")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 제품 파일 로드 중 오류: {e}")
+        return False
+
+def search_products_by_keywords(user_query: str) -> List[Dict]:
+    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기"""
+    try:
+        user_query_lower = user_query.lower()
+        found_products = []
+        
+        # 각 제품 파일명과 사용자 쿼리 매칭
+        for filename, content in product_data_cache.items():
+            relevance_score = 0
+            matched_keywords = []
+            
+            # 파일명에서 제품 정보 추출
+            filename_lower = filename.lower()
+            
+            # 키워드 매칭
+            for category, keywords in PRODUCT_KEYWORDS.items():
+                for keyword in keywords:
+                    if keyword.lower() in user_query_lower:
+                        if category in filename_lower or any(k in filename_lower for k in keywords):
+                            relevance_score += 2
+                            matched_keywords.append(keyword)
+                    
+                    if keyword.lower() in filename_lower and keyword.lower() in user_query_lower:
+                        relevance_score += 3
+            
+            # 직접적인 단어 매칭
+            query_words = user_query_lower.split()
+            for word in query_words:
+                if len(word) > 2 and word in filename_lower:
+                    relevance_score += 1
+                    matched_keywords.append(word)
+            
+            if relevance_score > 0:
+                found_products.append({
+                    'filename': filename,
+                    'content': content,
+                    'relevance_score': relevance_score,
+                    'matched_keywords': matched_keywords
+                })
+        
+        # 관련도 순으로 정렬
+        found_products.sort(key=lambda x: x['relevance_score'], reverse=True)
+        
+        logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 관련 제품을 찾았습니다.")
+        return found_products[:10]  # 상위 10개만 반환
+        
+    except Exception as e:
+        logger.error(f"❌ 제품 검색 중 오류: {e}")
+        return []
+
+def get_product_info(user_query: str, language: str = 'english') -> str:
+    """사용자 쿼리에 맞는 제품 정보 생성"""
+    try:
+        # 제품 검색
+        found_products = search_products_by_keywords(user_query)
+        
+        if not found_products:
+            return get_no_products_message(language)
+        
+        # 결과 포맷팅
+        response_parts = []
+        
+        # 언어별 헤더
+        if language == 'thai':
+            response_parts.append("🛍️ ผลิตภัณฑ์ที่เกี่ยวข้อง:")
+        elif language == 'korean':
+            response_parts.append("🛍️ 관련 제품:")
+        elif language == 'japanese':
+            response_parts.append("🛍️ 関連商品:")
+        elif language == 'chinese':
+            response_parts.append("🛍️ 相关产品:")
+        else:
+            response_parts.append("🛍️ Related Products:")
+        
+        # 제품 정보 추가
+        for i, product in enumerate(found_products[:5], 1):  # 상위 5개만 표시
+            filename = product['filename']
+            content = product['content']
+            
+            # 파일명에서 제품명 추출
+            product_name = extract_product_name(filename)
+            
+            response_parts.append(f"\n{i}. {product_name}")
+            
+            # 내용 요약 (너무 길면 축약)
+            if len(content) > 200:
+                content = content[:200] + "..."
+            
+            response_parts.append(f"{content}\n")
+        
+        # 추가 정보 안내
+        if language == 'thai':
+            response_parts.append("\n📞 สำหรับข้อมูลเพิ่มเติม โทร: 02-159-9880, 085-595-9565")
+        elif language == 'korean':
+            response_parts.append("\n📞 자세한 정보: 02-159-9880, 085-595-9565")
+        elif language == 'japanese':
+            response_parts.append("\n📞 詳細情報: 02-159-9880, 085-595-9565")
+        elif language == 'chinese':
+            response_parts.append("\n📞 更多信息: 02-159-9880, 085-595-9565")
+        else:
+            response_parts.append("\n📞 For more info: 02-159-9880, 085-595-9565")
+        
+        return "\n".join(response_parts)
+        
+    except Exception as e:
+        logger.error(f"❌ 제품 정보 생성 중 오류: {e}")
+        return get_error_message(language)
+
+def extract_product_name(filename: str) -> str:
+    """파일명에서 읽기 쉬운 제품명 추출"""
+    try:
+        # 확장자 제거
+        name = filename.replace('.txt', '')
+        
+        # 언더스코어를 공백으로 변경
+        name = name.replace('_', ' ')
+        
+        # 각 단어의 첫 글자 대문자화
+        name = ' '.join(word.capitalize() for word in name.split())
+        
+        return name
+    except:
+        return filename
+
+def get_no_products_message(language: str) -> str:
+    """제품을 찾지 못했을 때의 메시지"""
+    messages = {
+        'thai': "❌ ขออภัยค่ะ ไม่พบผลิตภัณฑ์ที่ตรงกับคำค้นหาของคุณ\n\n🔍 ลองค้นหาด้วยคำอื่น เช่น: สบู่, บาธบอม, สครับ, น้ำหอม\n📞 หรือติดต่อเราโดยตรง: 02-159-9880",
+        'korean': "❌ 죄송합니다. 검색어와 일치하는 제품을 찾을 수 없습니다.\n\n🔍 다른 키워드로 시도해보세요: 비누, 배스봄, 스크럽, 향수\n📞 또는 직접 문의: 02-159-9880",
+        'japanese': "❌ 申し訳ございません。検索条件に一致する商品が見つかりませんでした。\n\n🔍 他のキーワードでお試しください: 石鹸、バスボム、スクラブ、香水\n📞 またはお電話で: 02-159-9880",
+        'chinese': "❌ 抱歉，没有找到符合搜索条件的产品。\n\n🔍 请尝试其他关键词: 香皂、沐浴球、磨砂膏、香水\n📞 或直接联系: 02-159-9880",
+        'english': "❌ Sorry, no products found matching your search.\n\n🔍 Try other keywords like: soap, bath bomb, scrub, perfume\n📞 Or contact us directly: 02-159-9880"
+    }
+    return messages.get(language, messages['english'])
+
+def get_error_message(language: str) -> str:
+    """오류 발생 시 메시지"""
+    messages = {
+        'thai': "❌ เกิดข้อผิดพลาดในการค้นหาสินค้า โปรดติดต่อเราโดยตรง: 02-159-9880",
+        'korean': "❌ 제품 검색 중 오류가 발생했습니다. 직접 문의해주세요: 02-159-9880",
+        'japanese': "❌ 商品検索中にエラーが発生しました。直接お問い合わせください: 02-159-9880",
+        'chinese': "❌ 产品搜索时出现错误，请直接联系我们: 02-159-9880",
+        'english': "❌ Error occurred while searching products. Please contact us directly: 02-159-9880"
+    }
+    return messages.get(language, messages['english'])
+
+def is_product_search_query(user_message: str) -> bool:
+    """사용자 메시지가 제품 검색 쿼리인지 판단"""
+    try:
+        user_message_lower = user_message.lower()
+        
+        # 제품 검색 관련 키워드
+        search_indicators = [
+            # 영어
+            'product', 'products', 'item', 'items', 'what do you have', 'what products',
+            'show me', 'looking for', 'search', 'find', 'available', 'sell',
+            # 한국어
+            '제품', '상품', '뭐', '뭘', '무엇', '어떤', '찾', '있나', '파나', '팔아',
+            # 태국어
+            'สินค้า', 'ผลิตภัณฑ์', 'มีอะไร', 'ขาย', 'หา', 'ค้นหา',
+            # 일본어
+            '商品', '製品', '何', 'なに', '探', 'さが',
+            # 중국어
+            '产品', '商品', '什么', '寻找', '搜索'
+        ]
+        
+        # 제품 카테고리 키워드
+        product_categories = []
+        for category_keywords in PRODUCT_KEYWORDS.values():
+            product_categories.extend(category_keywords)
+        
+        # 검색 지시어 확인
+        for indicator in search_indicators:
+            if indicator in user_message_lower:
+                return True
+        
+        # 제품 카테고리 키워드 확인
+        for keyword in product_categories:
+            if keyword.lower() in user_message_lower:
+                return True
+        
+        return False
+        
+    except Exception as e:
+        logger.error(f"❌ 제품 검색 쿼리 판단 중 오류: {e}")
+        return False
+
+# ✅ 기존 함수들을 유지하면서 제품 검색 기능 통합
+
+# 가격 리스트 파일 읽기 함수 (기존 유지)
 def get_price_list(language='en'):
     """모든 언어 통합 price_list.txt 파일을 불러오는 함수"""
     try:
@@ -33,7 +302,7 @@ def get_price_list(language='en'):
         logger.error(f"❌ price_list.txt 파일 읽기 오류: {e}")
         return f"❌ 가격 정보를 불러오는 중 오류가 발생했습니다: {str(e)}"
 
-# ✅ 메신저 / 웹용 줄바꿈 처리 함수
+# 메신저 / 웹용 줄바꿈 처리 함수 (기존 유지)
 def format_text_for_messenger(text):
     """웹/메신저용: \n → <br> 로 변환"""
     try:
@@ -43,7 +312,7 @@ def format_text_for_messenger(text):
         logger.error(f"❌ 메신저용 줄바꿈 변환 오류: {e}")
         return text
 
-# ✅ LINE 용 줄바꿈 처리 함수
+# LINE 용 줄바꿈 처리 함수 (기존 유지)
 def format_text_for_line(text):
     """LINE 용: \n → \n\n 로 변환"""
     try:
@@ -53,29 +322,29 @@ def format_text_for_line(text):
         logger.error(f"❌ LINE용 줄바꿈 변환 오류: {e}")
         return text
 
-# ✅ .env 환경변수 로드
+# .env 환경변수 로드
 load_dotenv()
 
-# ✅ 로깅 설정: 시간, 로그 레벨, 메시지 형식을 포함하여 더 상세하게 설정
+# 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - [%(funcName)s] - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# ✅ 환경 확인 로그
+# 환경 확인 로그
 if os.getenv('RAILWAY_ENVIRONMENT'):
     logger.info("✅ Railway 프로덕션 환경에서 실행 중입니다.")
 else:
     logger.info("✅ 로컬 개발 환경에서 실행 중입니다.")
 
-# ✅ Flask 앱 초기화
+# Flask 앱 초기화
 app = Flask(__name__)
 
-# ✅ 채팅 로그를 저장할 폴더 이름 정의
+# 채팅 로그를 저장할 폴더 이름 정의
 CHAT_LOG_DIR = "save_chat"
 
-# ✅ OpenAI 클라이언트 설정
+# OpenAI 클라이언트 설정
 try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
@@ -86,7 +355,7 @@ except Exception as e:
     logger.error(f"❌ OpenAI 클라이언트 초기화 실패: {e}")
     client = None
 
-# ✅ LINE 설정 확인
+# LINE 설정 확인
 LINE_TOKEN = os.getenv("LINE_TOKEN") or os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_SECRET = os.getenv("LINE_CHANNEL_SECRET") or os.getenv("LINE_SECRET")
 
@@ -95,11 +364,11 @@ if not LINE_TOKEN:
 if not LINE_SECRET:
     logger.error("❌ LINE_SECRET 또는 LINE_CHANNEL_SECRET을 찾을 수 없습니다!")
 
-# ✅ 전역 변수: 언어별 캐시만 사용
-language_data_cache = {}  # 언어별 회사 소개 정보를 메모리에 저장해두는 캐시
+# 전역 변수: 언어별 캐시만 사용
+language_data_cache = {}
 last_update_time = datetime.now()
 
-# ✅ 언어별 회사 정보 로드 (캐싱 기능 포함) - 확장된 버전
+# 언어별 회사 정보 로드 (기존 유지)
 def fetch_company_info(user_language):
     """언어별 company_info.txt 파일을 읽어오고, 결과를 캐시에 저장합니다."""
     global language_data_cache
@@ -108,7 +377,6 @@ def fetch_company_info(user_language):
         logger.info(f"📋 캐시된 '{user_language}' 회사 정보를 사용합니다.")
         return language_data_cache[user_language]
 
-    # 확장된 언어 매핑
     lang_map = {
         'thai': 'th',
         'english': 'en', 
@@ -128,30 +396,33 @@ def fetch_company_info(user_language):
     
     lang_code = lang_map.get(user_language, 'en')
     filename = f"company_info_{lang_code}.txt"
+    company_info_dir = "company_info"
+    filepath = os.path.join(company_info_dir, filename)
 
     try:
-        if os.path.exists(filename):
-            with open(filename, 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                if len(content) > 20:  # 내용이 너무 짧지 않은지 확인
-                    logger.info(f"✅ '{user_language}' 회사 정보를 {filename} 파일에서 성공적으로 로드했습니다.")
-                    language_data_cache[user_language] = content # 캐시에 저장
-                    return content
-    except Exception as e:
-        logger.error(f"❌ {filename} 파일 로드 중 오류 발생: {e}")
-
-    # 영어 폴백 시도
-    logger.warning(f"⚠️ {filename} 파일을 찾을 수 없거나 내용이 비어있습니다. 영어 버전을 시도합니다.")
-    try:
-        if os.path.exists("company_info_en.txt"):
-             with open("company_info_en.txt", 'r', encoding='utf-8') as f:
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
                 if len(content) > 20:
-                    logger.info("✅ 영어 버전(company_info_en.txt)을 폴백으로 사용합니다.")
+                    logger.info(f"✅ '{user_language}' 회사 정보를 {filepath} 파일에서 성공적으로 로드했습니다.")
                     language_data_cache[user_language] = content
                     return content
     except Exception as e:
-        logger.error(f"❌ company_info_en.txt 파일 로드 중 오류 발생: {e}")
+        logger.error(f"❌ {filepath} 파일 로드 중 오류 발생: {e}")
+
+    # 영어 폴백 시도
+    logger.warning(f"⚠️ {filepath} 파일을 찾을 수 없거나 내용이 비어있습니다. 영어 버전을 시도합니다.")
+    try:
+        fallback_filepath = os.path.join(company_info_dir, "company_info_en.txt")
+        if os.path.exists(fallback_filepath):
+             with open(fallback_filepath, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if len(content) > 20:
+                    logger.info(f"✅ 영어 버전({fallback_filepath})을 폴백으로 사용합니다.")
+                    language_data_cache[user_language] = content
+                    return content
+    except Exception as e:
+        logger.error(f"❌ {fallback_filepath} 파일 로드 중 오류 발생: {e}")
 
     # 최종 하드코딩 폴백
     logger.warning("⚠️ 모든 파일 로드에 실패하여, 하드코딩된 기본 정보를 사용합니다.")
@@ -171,10 +442,16 @@ Feel free to ask us anything! 😊
     language_data_cache[user_language] = default_info
     return default_info
 
-# ✅ 초기 데이터 로드 (구글 서비스 제거)
+# ✅ 초기 데이터 로드 (제품 데이터 포함)
 def initialize_data():
-    """앱 시작 시 필요한 언어별 데이터를 미리 로드합니다."""
+    """앱 시작 시 필요한 언어별 데이터와 제품 데이터를 미리 로드합니다."""
     logger.info("🚀 앱 초기화를 시작합니다...")
+    
+    # 제품 데이터 로드
+    if load_product_files():
+        logger.info(f"✅ 제품 데이터 로드 완료: {len(product_data_cache)}개 파일")
+    else:
+        logger.warning("⚠️ 제품 데이터 로드 실패")
     
     # 주요 언어 회사 정보 미리 캐싱
     common_languages = ['english', 'korean', 'thai', 'japanese', 'chinese', 'spanish', 'german']
@@ -186,7 +463,7 @@ def initialize_data():
     
     logger.info(f"✅ 캐시된 언어: {list(language_data_cache.keys())}")
 
-# ✅ 시스템 메시지 정의
+# 시스템 메시지 정의 (기존 유지)
 SYSTEM_MESSAGE = """
 You are a knowledgeable and friendly Thai staff member of SABOO THAILAND.
 
@@ -231,52 +508,40 @@ Key information about SABOO THAILAND:
 Products: Natural soaps (fruit-shaped), bath products, air fresheners, essential oils, scrubs, bath sets.
 """
 
-# ✅ 언어 감지 함수 (확장된 버전)
+# 언어 감지 함수 (기존 유지)
 def detect_user_language(message):
-    """사용자 메시지에서 언어를 감지합니다. - 확장된 버전"""
+    """사용자 메시지에서 언어를 감지합니다."""
     try:
-        # 태국어
         if re.search(r'[\u0e00-\u0e7f]+', message):
             return 'thai'
-        # 한국어
         elif re.search(r'[\uac00-\ud7af]+', message):
             return 'korean'
-        # 일본어 (히라가나, 가타카나)
         elif re.search(r'[\u3040-\u309f\u30a0-\u30ff]+', message):
             return 'japanese'
-        # 중국어/일본어 한자
         elif re.search(r'[\u4e00-\u9fff]+', message):
-            # 히라가나/가타카나가 함께 있으면 일본어
             if re.search(r'[\u3040-\u309f\u30a0-\u30ff]', message):
                 return 'japanese'
             else:
-                return 'chinese'  # 한자만 있으면 중국어로 간주
-        # 아랍어
+                return 'chinese'
         elif re.search(r'[\u0600-\u06ff]+', message):
             return 'arabic'
-        # 러시아어
         elif re.search(r'[\u0401\u0451\u0410-\u044f]+', message):
             return 'russian'
-        # 프랑스어 특수문자
         elif re.search(r'[àâäéèêëïîôùûüÿç]+', message.lower()):
             return 'french'
-        # 스페인어/포르투갈어 특수문자  
         elif re.search(r'[àáâãçéêíóôõú]+', message.lower()):
             return 'spanish'
-        # 독일어 특수문자
         elif re.search(r'[äöüß]+', message.lower()):
             return 'german'
-        # 베트남어
         elif re.search(r'[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụ]+', message.lower()):
             return 'vietnamese'
         
-        # 기본값: 영어
         return 'english'
     except Exception as e:
         logger.error(f"❌ 언어 감지 중 오류 발생: {e}")
         return 'english'
 
-# ✅ 영어 폴백 응답 생성
+# 영어 폴백 응답 생성 (기존 유지)
 def get_english_fallback_response(user_message, error_context=""):
     """문제 발생 시 영어로 된 기본 응답을 생성합니다."""
     logger.warning(f"⚠️ 폴백 응답을 활성화합니다. 원인: {error_context}")
@@ -335,7 +600,7 @@ Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
 
 Please contact us directly or try again later. Thank you! 😊"""
 
-# ✅ 하이퍼링크 추가 함수
+# 하이퍼링크 추가 함수 (기존 유지)
 def add_hyperlinks(text):
     """응답 텍스트에 포함된 전화번호와 URL을 클릭 가능한 HTML 링크로 변환합니다."""
     try:
@@ -360,27 +625,50 @@ def add_hyperlinks(text):
         logger.error(f"❌ 하이퍼링크 변환 중 오류 발생: {e}")
         return text
 
-# ✅ GPT 응답 생성 함수 (구글 서비스 제거, 언어별 파일만 사용)
+# ✅ GPT 응답 생성 함수 (제품 검색 기능 통합)
 def get_gpt_response(user_message):
-    """언어별 파일 데이터만을 사용하여 OpenAI GPT 모델로 최종 답변을 생성합니다."""
+    """언어별 파일 데이터와 제품 검색을 통합하여 OpenAI GPT 모델로 최종 답변을 생성합니다."""
     user_language = detect_user_language(user_message)
     logger.info(f"🌐 감지된 사용자 언어: {user_language}")
     
-    company_info = fetch_company_info(user_language)
-
     try:
         if not client:
             logger.error("❌ OpenAI client가 없습니다.")
             return get_english_fallback_response(user_message, "OpenAI service unavailable")
+        
+        # 1. 제품 검색 쿼리인지 확인
+        if is_product_search_query(user_message):
+            logger.info("🔍 제품 검색 쿼리로 감지되었습니다.")
+            product_info = get_product_info(user_message, user_language)
+            
+            # 제품 정보만으로도 충분한 경우 바로 반환
+            if "관련 제품:" in product_info or "Related Products:" in product_info or "ผลิตภัณฑ์ที่เกี่ยวข้อง:" in product_info:
+                return product_info
+        
+        # 2. 회사 정보 가져오기
+        company_info = fetch_company_info(user_language)
         
         # 회사 정보 유효성 검사
         if not company_info or len(company_info.strip()) < 50:
             logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
             return get_english_fallback_response(user_message, "Company data temporarily unavailable")
         
+        # 3. 제품 데이터 포함 여부 결정
+        product_context = ""
+        if is_product_search_query(user_message):
+            found_products = search_products_by_keywords(user_message)
+            if found_products:
+                product_context = f"\n\n[제품 검색 결과]\n"
+                for i, product in enumerate(found_products[:3], 1):  # 상위 3개만 포함
+                    product_name = extract_product_name(product['filename'])
+                    content_preview = product['content'][:150] + "..." if len(product['content']) > 150 else product['content']
+                    product_context += f"{i}. {product_name}: {content_preview}\n"
+        
+        # 4. GPT 프롬프트 생성
         prompt = f"""
 [회사 정보 및 제품 정보 - 언어: {user_language}]
 {company_info}
+{product_context}
 
 (중요: 고객 질문이 배송/운송, 제품, 회사 정보와 관련된 경우 반드시 위 회사 정보 텍스트에서 정보를 찾을 것!)
 
@@ -388,6 +676,7 @@ def get_gpt_response(user_message):
 [사용자 질문]
 {user_message}
 """
+
         completion = client.chat.completions.create(
             model="gpt-4o", 
             messages=[
@@ -417,7 +706,7 @@ def get_gpt_response(user_message):
         error_context = f"GPT API error: {str(e)[:100]}"
         return get_english_fallback_response(user_message, error_context)
 
-# ✅ 대화 로그 저장 함수 (폴더 및 날짜별 파일 자동 생성)
+# 대화 로그 저장 함수 (기존 유지)
 def save_chat(user_msg, bot_msg, user_id="anonymous"):
     """대화 내용을 날짜별 텍스트 파일로 저장합니다."""
     now = datetime.now()
@@ -433,7 +722,6 @@ def save_chat(user_msg, bot_msg, user_id="anonymous"):
     filename = f"save_chat_{datestamp}.txt"
     full_path = os.path.join(CHAT_LOG_DIR, filename)
     
-    # 언어 감지 추가
     detected_lang = detect_user_language(user_msg)
     
     try:
@@ -445,7 +733,7 @@ def save_chat(user_msg, bot_msg, user_id="anonymous"):
     except Exception as e:
         logger.error(f"❌ 로그 파일 '{full_path}' 저장 실패: {e}")
 
-# ✅ LINE 서명 검증
+# LINE 서명 검증 (기존 유지)
 def verify_line_signature(body, signature):
     """LINE Webhook 서명 검증"""
     if not LINE_SECRET:
@@ -459,7 +747,7 @@ def verify_line_signature(body, signature):
         logger.error(f"❌ 서명 검증 중 오류 발생: {e}")
         return False
 
-# ✅ LINE 메시지 전송
+# LINE 메시지 전송 (기존 유지)
 def send_line_message(reply_token, message):
     """LINE API로 메시지 전송"""
     try:
@@ -512,10 +800,75 @@ def health():
         "line_token": "configured" if LINE_TOKEN else "missing",
         "line_secret": "configured" if LINE_SECRET else "missing",
         "cached_languages": list(language_data_cache.keys()),
-        "data_source": "language_files_only",
+        "product_files_loaded": len(product_data_cache),
+        "product_last_update": product_last_update.isoformat() if product_last_update else None,
+        "data_source": "language_files_and_product_search",
         "google_services": "disabled",
         "linebreak_functions": "enabled"
     })
+
+@app.route('/products')
+def products_status():
+    """제품 데이터 상태 확인"""
+    try:
+        return jsonify({
+            "total_product_files": len(product_data_cache),
+            "product_files": list(product_data_cache.keys()),
+            "last_update": product_last_update.isoformat() if product_last_update else None,
+            "price_list_folder_exists": os.path.exists("price_list"),
+            "sample_keywords": dict(list(PRODUCT_KEYWORDS.items())[:5])
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/search-products')
+def search_products_endpoint():
+    """제품 검색 테스트 엔드포인트"""
+    try:
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify({"error": "검색어를 입력해주세요 (q 파라미터)"}), 400
+        
+        found_products = search_products_by_keywords(query)
+        
+        result = {
+            "query": query,
+            "found_count": len(found_products),
+            "products": []
+        }
+        
+        for product in found_products[:10]:
+            result["products"].append({
+                "filename": product['filename'],
+                "product_name": extract_product_name(product['filename']),
+                "relevance_score": product['relevance_score'],
+                "matched_keywords": product['matched_keywords'],
+                "content_preview": product['content'][:200] + "..." if len(product['content']) > 200 else product['content']
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/reload-products')
+def reload_products():
+    """제품 데이터 다시 로드"""
+    try:
+        if load_product_files():
+            return jsonify({
+                "status": "success",
+                "message": "제품 데이터가 성공적으로 다시 로드되었습니다.",
+                "loaded_files": len(product_data_cache),
+                "timestamp": datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "제품 데이터 로드에 실패했습니다."
+            }), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/language-status')
 def language_status():
@@ -523,7 +876,6 @@ def language_status():
     try:
         status = {}
         
-        # 지원 언어 목록
         supported_languages = ['thai', 'english', 'korean', 'japanese', 'german', 
                              'spanish', 'arabic', 'chinese', 'taiwanese', 'vietnamese',
                              'myanmar', 'khmer', 'russian', 'french']
@@ -539,12 +891,13 @@ def language_status():
             try:
                 lang_code = lang_map.get(lang, 'en')
                 filename = f"company_info_{lang_code}.txt"
+                filepath = os.path.join("company_info", filename)
                 
-                file_exists = os.path.exists(filename)
+                file_exists = os.path.exists(filepath)
                 cached = lang in language_data_cache
                 
                 if file_exists:
-                    with open(filename, 'r', encoding='utf-8') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         content_length = len(f.read())
                 else:
                     content_length = 0
@@ -552,6 +905,7 @@ def language_status():
                 status[lang] = {
                     "file_exists": file_exists,
                     "filename": filename,
+                    "filepath": filepath,
                     "cached": cached,
                     "content_length": content_length,
                     "cache_length": len(language_data_cache.get(lang, "")) if cached else 0
@@ -564,7 +918,9 @@ def language_status():
             "language_status": status,
             "total_cached": len(language_data_cache),
             "cache_summary": {lang: len(content) for lang, content in language_data_cache.items()},
-            "data_source": "language_files_only"
+            "company_info_folder_exists": os.path.exists("company_info"),
+            "price_list_folder_exists": os.path.exists("price_list"),
+            "data_source": "language_files_and_product_search"
         })
         
     except Exception as e:
@@ -590,17 +946,16 @@ def clear_language_cache():
 def reload_language_data():
     """언어별 데이터 다시 로드"""
     try:
-        # 캐시 초기화
         global language_data_cache
         language_data_cache.clear()
         
-        # 데이터 다시 로드
         initialize_data()
         
         return jsonify({
             "status": "success",
             "message": "Language data reloaded successfully.",
             "cached_languages": list(language_data_cache.keys()),
+            "product_files": len(product_data_cache),
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
@@ -614,7 +969,6 @@ def chat():
         if not user_message: 
             return jsonify({"error": "Empty message."}), 400
         
-        # 언어 감지
         detected_language = detect_user_language(user_message)
         
         # ✅ 가격 키워드 감지 - 다국어 지원
@@ -639,42 +993,48 @@ def chat():
             'цена', 'цены', 'стоимость', 'сколько'
         ]
         
-        # 가격 관련 키워드가 포함되어 있는지 확인
+        # 1. 일반적인 가격 관련 키워드 확인 (기존 price_list.txt 사용)
         if any(keyword.lower() in user_message.lower() for keyword in price_keywords):
-            logger.info(f"💰 가격 정보 요청 감지 - 언어: {detected_language}")
+            logger.info(f"💰 일반 가격 정보 요청 감지 - 언어: {detected_language}")
             
-            # 언어별 가격 정보 가져오기
             price_text = get_price_list(language=detected_language)
-            
-            # ✅ 웹/메신저용 줄바꿈 처리
             formatted_price_text = format_text_for_messenger(price_text)
-            
-            # 로그 저장용 HTML 태그 제거
             clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_price_text)
             save_chat(user_message, clean_response_for_log)
-            
-            # 가격 정보에 하이퍼링크 추가
             price_text_with_links = add_hyperlinks(formatted_price_text)
             
             return jsonify({
                 "reply": price_text_with_links,
-                "is_html": True,  # 하이퍼링크가 포함되어 있을 수 있으므로 HTML로 처리
+                "is_html": True,
                 "user_language": detected_language,
                 "data_source": "price_list",
-                "request_type": "price_inquiry"
+                "request_type": "general_price_inquiry"
             })
         
-        # ✅ 기존 GPT 호출 (가격 관련이 아닌 일반 질문)
+        # 2. 제품별 상세 검색 확인
+        elif is_product_search_query(user_message):
+            logger.info(f"🔍 제품 검색 요청 감지 - 언어: {detected_language}")
+            
+            product_response = get_product_info(user_message, detected_language)
+            formatted_response = format_text_for_messenger(product_response)
+            clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_response)
+            save_chat(user_message, clean_response_for_log)
+            response_with_links = add_hyperlinks(formatted_response)
+            
+            return jsonify({
+                "reply": response_with_links,
+                "is_html": True,
+                "user_language": detected_language,
+                "data_source": "product_search",
+                "request_type": "product_search_inquiry"
+            })
+        
+        # 3. 기존 GPT 호출 (일반 질문)
         bot_response = get_gpt_response(user_message)
-        
-        # ✅ 웹/메신저용 줄바꿈 처리
         formatted_response = format_text_for_messenger(bot_response)
-        
-        # 로그에는 HTML 태그를 제거하고 저장
         clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_response)
         save_chat(user_message, clean_response_for_log)
         
-        # 언어 코드 매핑
         lang_map = {
             'thai': 'th', 'english': 'en', 'korean': 'kr', 'japanese': 'ja',
             'german': 'de', 'spanish': 'es', 'arabic': 'ar', 'chinese': 'zh_cn',
@@ -688,8 +1048,8 @@ def chat():
             "reply": formatted_response,
             "is_html": True,
             "user_language": detected_language,
-            "language_file_used": language_file_used,
-            "data_source": "language_files_only",
+            "language_file_used": os.path.join("company_info", language_file_used),
+            "data_source": "language_files_and_gpt",
             "request_type": "general_inquiry"
         })
         
@@ -699,7 +1059,6 @@ def chat():
             user_message if 'user_message' in locals() else "general inquiry", 
             f"Web chat system error: {str(e)[:100]}"
         )
-        # ✅ 폴백 응답에도 줄바꿈 처리 적용
         formatted_fallback = format_text_for_messenger(fallback_response)
         return jsonify({
             "reply": formatted_fallback,
@@ -719,8 +1078,6 @@ def line_webhook():
         
         if not verify_line_signature(body.encode('utf-8'), signature):
             logger.warning("⚠️ 잘못된 서명입니다.")
-            # 개발 편의를 위해 일단 진행 (프로덕션에서는 400 반환 권장)
-            # return "Invalid signature", 400
         
         webhook_data = json.loads(body)
         
@@ -730,43 +1087,41 @@ def line_webhook():
                 reply_token = event["replyToken"]
                 user_id = event.get("source", {}).get("userId", "unknown")
                 
-                # 언어 감지
                 detected_language = detect_user_language(user_text)
                 logger.info(f"👤 사용자 {user_id[:8]} ({detected_language}): {user_text}")
                 
-                # ✅ LINE에서도 가격 키워드 감지
+                # ✅ 가격 키워드 확인
                 price_keywords = [
-                    # 한국어
                     '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
-                    # 영어
                     'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
-                    # 태국어
                     'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
-                    # 일본어
                     '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
-                    # 중국어
                     '价格', '价钱', '多少钱', '费用', '成本', '定价',
-                    # 스페인어
                     'precio', 'precios', 'costo', 'cuanto', 'tarifa',
-                    # 독일어
                     'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
-                    # 프랑스어
                     'prix', 'coût', 'combien', 'tarif',
-                    # 러시아어
                     'цена', 'цены', 'стоимость', 'сколько'
                 ]
                 
-                # 가격 관련 키워드 확인
                 if any(keyword.lower() in user_text.lower() for keyword in price_keywords):
-                    logger.info(f"💰 LINE에서 가격 정보 요청 감지 - 언어: {detected_language}")
+                    logger.info(f"💰 LINE에서 일반 가격 정보 요청 감지 - 언어: {detected_language}")
                     price_text = get_price_list(language=detected_language)
-                    
-                    # ✅ LINE용 줄바꿈 처리 후 HTML 태그 제거
                     formatted_price_text = format_text_for_line(price_text)
                     clean_price_response = re.sub(r'<[^>]+>', '', formatted_price_text)
                     
                     if send_line_message(reply_token, clean_price_response):
                         save_chat(user_text, clean_price_response, user_id)
+                    continue
+                
+                # ✅ 제품 검색 확인
+                elif is_product_search_query(user_text):
+                    logger.info(f"🔍 LINE에서 제품 검색 요청 감지 - 언어: {detected_language}")
+                    product_info = get_product_info(user_text, detected_language)
+                    formatted_product_text = format_text_for_line(product_info)
+                    clean_product_response = re.sub(r'<[^>]+>', '', formatted_product_text)
+                    
+                    if send_line_message(reply_token, clean_product_response):
+                        save_chat(user_text, clean_product_response, user_id)
                     continue
                 
                 # 환영 인사 키워드 확인
@@ -822,7 +1177,7 @@ def initialize_once():
     """첫 번째 요청이 들어왔을 때 딱 한 번만 앱 초기화를 실행합니다."""
     global app_initialized
     if not app_initialized:
-        with threading.Lock(): # 여러 요청이 동시에 들어와도 한 번만 실행되도록 보장
+        with threading.Lock():
             if not app_initialized:
                 logger.info("🎯 첫 요청 감지, 앱 초기화를 진행합니다...")
                 initialize_data()
@@ -839,11 +1194,11 @@ if __name__ == '__main__':
     debug_mode = not os.getenv('RAILWAY_ENVIRONMENT')
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
-    logger.info("📂 데이터 소스: 언어별 파일만 사용 (Google 서비스 비활성화)")
+    logger.info("📂 데이터 소스: 언어별 파일 + 제품 검색 기능")
+    logger.info("🔍 제품 검색: price_list 폴더에서 실시간 검색 지원")
     logger.info("🌈 줄바꿈 처리 기능: 웹용 <br>, LINE용 \\n\\n 지원")
     
     try:
-        # use_reloader=False는 개발 모드에서 초기화가 두 번 실행되는 것을 방지
         app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=not debug_mode)
     except KeyboardInterrupt:
         logger.info("🛑 서버 종료 요청을 받았습니다.")
