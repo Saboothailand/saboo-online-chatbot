@@ -105,21 +105,70 @@ def load_product_files():
         return False
 
 def search_products_by_keywords(user_query: str) -> List[Dict]:
-    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기"""
+    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (쿼리 의도에 따라 list/price 필터링)"""
     try:
         user_query_lower = user_query.lower()
         found_products = []
         
-        # 각 제품 파일명과 사용자 쿼리 매칭
+        # 1. 사용자 쿼리 의도 분석
+        price_intent_keywords = [
+            # 한국어
+            '가격', '얼마', '값', '요금', '비용', '돈', '원', '바트',
+            # 영어  
+            'price', 'cost', 'how much', 'pricing', 'rate', 'fee', 'baht', 'dollar',
+            # 태국어
+            'ราคา', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย', 'บาท',
+            # 일본어
+            '価格', '値段', 'いくら', '料金', 'コスト', '円',
+            # 중국어
+            '价格', '价钱', '多少钱', '费用', '成本', '元',
+            # 기타 언어
+            'precio', 'precios', 'costo', 'cuanto', 'preis', 'kosten', 'prix', 'цена'
+        ]
+        
+        list_intent_keywords = [
+            # 한국어
+            '어떤', '뭐', '뭘', '무엇', '종류', '있어', '있나', '품목', '목록', '리스트',
+            # 영어
+            'what', 'which', 'types', 'kinds', 'available', 'have', 'list', 'products', 'items',
+            # 태국어  
+            'อะไร', 'มีอะไร', 'ชนิด', 'ประเภท', 'รายการ', 'สินค้า',
+            # 일본어
+            '何', 'なに', '種類', 'タイプ', 'ある', 'あります', 'リスト',
+            # 중국어
+            '什么', '哪些', '种类', '类型', '有什么', '列表',
+            # 기타 언어
+            'que', 'tipos', 'was', 'welche', 'arten', 'quoi', 'types', 'что', 'какие'
+        ]
+        
+        # 의도 판별
+        is_price_query = any(keyword in user_query_lower for keyword in price_intent_keywords)
+        is_list_query = any(keyword in user_query_lower for keyword in list_intent_keywords)
+        
+        # 기본값: 가격과 목록 키워드가 모두 없으면 목록으로 간주
+        if not is_price_query and not is_list_query:
+            is_list_query = True
+        
+        logger.info(f"🎯 쿼리 의도 분석: 가격={is_price_query}, 목록={is_list_query}")
+        
+        # 2. 각 제품 파일명과 사용자 쿼리 매칭
         for filename, content in product_data_cache.items():
             relevance_score = 0
             matched_keywords = []
             
-            # 파일명에서 제품 정보 추출
+            # 파일 타입 필터링
+            if is_price_query and not filename.endswith('_price.txt'):
+                continue  # 가격 쿼리인데 price 파일이 아니면 건너뛰기
+            elif is_list_query and not filename.endswith('_list.txt'):
+                continue  # 목록 쿼리인데 list 파일이 아니면 건너뛰기
+            
             filename_lower = filename.lower()
             
-            # 키워드 매칭
+            # 키워드 매칭 (가격/목록 키워드 제외하고 제품 관련 키워드만)
             for category, keywords in PRODUCT_KEYWORDS.items():
+                if category == 'price':  # 가격 키워드는 매칭에서 제외
+                    continue
+                    
                 for keyword in keywords:
                     if keyword.lower() in user_query_lower:
                         if category in filename_lower or any(k in filename_lower for k in keywords):
@@ -129,8 +178,10 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
                     if keyword.lower() in filename_lower and keyword.lower() in user_query_lower:
                         relevance_score += 3
             
-            # 직접적인 단어 매칭
-            query_words = user_query_lower.split()
+            # 직접적인 단어 매칭 (가격/목록 키워드 제외)
+            query_words = [word for word in user_query_lower.split() 
+                          if word not in price_intent_keywords + list_intent_keywords]
+            
             for word in query_words:
                 if len(word) > 2 and word in filename_lower:
                     relevance_score += 1
@@ -141,13 +192,15 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
                     'filename': filename,
                     'content': content,
                     'relevance_score': relevance_score,
-                    'matched_keywords': matched_keywords
+                    'matched_keywords': matched_keywords,
+                    'file_type': 'price' if filename.endswith('_price.txt') else 'list'
                 })
         
         # 관련도 순으로 정렬
         found_products.sort(key=lambda x: x['relevance_score'], reverse=True)
         
-        logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 관련 제품을 찾았습니다.")
+        file_type = 'price' if is_price_query else 'list'
+        logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 {file_type} 파일을 찾았습니다.")
         return found_products[:10]  # 상위 10개만 반환
         
     except Exception as e:
@@ -155,7 +208,7 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
         return []
 
 def get_product_info(user_query: str, language: str = 'english') -> str:
-    """사용자 쿼리에 맞는 제품 정보 생성"""
+    """사용자 쿼리에 맞는 제품 정보 생성 (의도에 따라 list 또는 price만 표시)"""
     try:
         # 제품 검색
         found_products = search_products_by_keywords(user_query)
@@ -166,31 +219,51 @@ def get_product_info(user_query: str, language: str = 'english') -> str:
         # 결과 포맷팅
         response_parts = []
         
+        # 파일 타입 확인 (첫 번째 결과로 판단)
+        file_type = found_products[0].get('file_type', 'list')
+        
         # 언어별 헤더
-        if language == 'thai':
-            response_parts.append("🛍️ ผลิตภัณฑ์ที่เกี่ยวข้อง:")
-        elif language == 'korean':
-            response_parts.append("🛍️ 관련 제품:")
-        elif language == 'japanese':
-            response_parts.append("🛍️ 関連商品:")
-        elif language == 'chinese':
-            response_parts.append("🛍️ 相关产品:")
-        else:
-            response_parts.append("🛍️ Related Products:")
+        if file_type == 'price':
+            if language == 'thai':
+                response_parts.append("💰 ราคาสินค้า:")
+            elif language == 'korean':
+                response_parts.append("💰 제품 가격:")
+            elif language == 'japanese':
+                response_parts.append("💰 商品価格:")
+            elif language == 'chinese':
+                response_parts.append("💰 产品价格:")
+            else:
+                response_parts.append("💰 Product Prices:")
+        else:  # list
+            if language == 'thai':
+                response_parts.append("🛍️ รายการสินค้า:")
+            elif language == 'korean':
+                response_parts.append("🛍️ 제품 목록:")
+            elif language == 'japanese':
+                response_parts.append("🛍️ 商品一覧:")
+            elif language == 'chinese':
+                response_parts.append("🛍️ 产品列表:")
+            else:
+                response_parts.append("🛍️ Product List:")
         
         # 제품 정보 추가
         for i, product in enumerate(found_products[:5], 1):  # 상위 5개만 표시
             filename = product['filename']
             content = product['content']
             
-            # 파일명에서 제품명 추출
-            product_name = extract_product_name(filename)
+            # 파일명에서 제품명 추출 (깔끔하게)
+            if filename.endswith('_list.txt'):
+                product_name = extract_product_name(filename.replace('_list.txt', ''))
+            elif filename.endswith('_price.txt'):
+                product_name = extract_product_name(filename.replace('_price.txt', ''))
+            else:
+                product_name = extract_product_name(filename)
             
-            response_parts.append(f"\n{i}. {product_name}")
+            response_parts.append(f"\n**{i}. {product_name}**")
             
-            # 내용 요약 (너무 길면 축약)
-            if len(content) > 200:
-                content = content[:200] + "..."
+            # 내용 표시 (너무 길면 축약)
+            if len(content) > 400:
+                content = content[:400] + "..."
             
             response_parts.append(f"{content}\n")
         
