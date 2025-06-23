@@ -1005,6 +1005,13 @@ app = Flask(__name__)
 # 채팅 로그를 저장할 폴더 이름 정의
 CHAT_LOG_DIR = "save_chat"
 
+# 전역 변수: 언어별 캐시만 사용
+language_data_cache = {}
+last_update_time = datetime.now()
+
+# ✅ 사용자별 대화 컨텍스트 저장 (최근 질문 기억용)
+user_context_cache = {}
+
 # OpenAI 클라이언트 설정
 try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -1027,13 +1034,6 @@ if not LINE_SECRET:
     logger.error("❌ LINE_SECRET 또는 LINE_CHANNEL_SECRET을 찾을 수 없습니다!")
 if not ADMIN_API_KEY:
     logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
-
-# 전역 변수: 언어별 캐시만 사용
-language_data_cache = {}
-last_update_time = datetime.now()
-
-# ✅ 사용자별 대화 컨텍스트 저장 (최근 질문 기억용)
-user_context_cache = {}
 
 def save_user_context(user_id: str, message: str, response: str, language: str):
     """사용자별 최근 대화 컨텍스트 저장"""
