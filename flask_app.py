@@ -135,28 +135,19 @@ MORE_INFO_KEYWORDS = {
     'russian': ['подробнее', 'расскажите больше', 'больше информации', 'подробное объяснение']
 }
 
-# 🔥 개선된 시스템 메시지 - 자연스러운 응답 허용
+# 🔥 개선된 시스템 메시지 - 정확한 정보 우선
 NATURAL_SYSTEM_MESSAGE = """You are a knowledgeable and friendly customer service representative for SABOO THAILAND, a natural soap and bath product company.
 
-Key principles:
-- Always reply in the same language as the customer
-- Be warm, helpful, and professional like a real Thai staff member
-- Use your knowledge about natural soaps, bath products, and skincare to help customers
-- When you don't know specific details, it's perfectly fine to give general helpful advice
-- Encourage customers to contact the store directly for very specific product questions
-- Use light emojis to be friendly but don't overuse them
+CRITICAL RULES:
+1. For company-specific information (phone numbers, addresses, store locations, contact details), you MUST use ONLY the exact information provided in the user's prompt under "COMPANY INFORMATION"
+2. Do NOT use any phone numbers, addresses, or contact information from your training data
+3. For general questions about soaps, skincare, and bath products, you may use your knowledge to be helpful
+4. Always reply in the same language as the customer
+5. Be warm, helpful, and professional like a real Thai staff member
+6. Use light emojis to be friendly but don't overuse them
+7. When you don't know specific product details, give general helpful advice and suggest contacting the store
 
-Remember: You're here to help customers have a great experience with SABOO THAILAND! 😊
-
-Important company information to remember:
-- Founded in 2008
-- First Thai company to create fruit-shaped natural soap
-- Exports to over 20 countries worldwide
-- Store: Mixt Chatuchak, 2nd Floor, Bangkok
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-"""
+Remember: Company information accuracy is CRITICAL for customer trust! 😊"""
 
 ENGLISH_FALLBACK_MESSAGE = """
 You are a helpful customer service representative for SABOO THAILAND.
@@ -499,9 +490,12 @@ def format_text_for_line(text: str) -> str:
 def fetch_company_info(user_language: str) -> str:
     """언어별 company_info.txt 파일을 읽어오고, 결과를 캐시에 저장합니다."""
     global language_data_cache
-    if user_language in language_data_cache:
+    
+    # 캐시 키를 언어별로 구분
+    cache_key = f"company_info_{user_language}"
+    if cache_key in language_data_cache:
         logger.info(f"📋 캐시된 '{user_language}' 회사 정보를 사용합니다.")
-        return language_data_cache[user_language]
+        return language_data_cache[cache_key]
 
     lang_map = {
         'thai': 'th', 'english': 'en', 'korean': 'kr', 'japanese': 'ja', 
@@ -518,7 +512,7 @@ def fetch_company_info(user_language: str) -> str:
                 content = f.read().strip()
                 if len(content) > 20:
                     logger.info(f"✅ '{user_language}' 회사 정보를 {filepath} 파일에서 성공적으로 로드했습니다.")
-                    language_data_cache[user_language] = content
+                    language_data_cache[cache_key] = content
                     return content
     except Exception as e:
         logger.error(f"❌ {filepath} 파일 로드 중 오류 발생: {e}")
@@ -531,26 +525,52 @@ def fetch_company_info(user_language: str) -> str:
                 content = f.read().strip()
                 if len(content) > 20:
                     logger.info(f"✅ 영어 버전({fallback_filepath})을 폴백으로 사용합니다.")
-                    language_data_cache[user_language] = content
+                    language_data_cache[cache_key] = content
                     return content
     except Exception as e:
         logger.error(f"❌ {fallback_filepath} 파일 로드 중 오류 발생: {e}")
 
-    logger.warning("⚠️ 모든 파일 로드에 실패하여, 하드코딩된 기본 정보를 사용합니다.")
-    default_info = """
-Welcome to SABOO THAILAND! 
+    logger.warning("⚠️ 모든 파일 로드에 실패하여, 언어별 하드코딩된 기본 정보를 사용합니다.")
+    
+    # 🔥 언어별 기본 정보 제공
+    default_info_by_lang = {
+        'korean': """
+SABOO THAILAND 회사 정보:
 
-We are Thailand's first natural fruit-shaped soap manufacturer since 2008.
-- Store: Mixt Chatuchak, 2nd Floor, Bangkok
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-- Email: saboothailand@gmail.com
+전화: 062-897-8962
+공장: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C 라차담리: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt 짜뚜짝: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
 
-Products: Natural soaps, bath products, air fresheners, essential oils.
-Feel free to ask us anything! 😊
+2008년 설립, 태국 최초 과일 모양 천연 비누 제조회사
+20개국 이상 수출, 웹사이트: www.saboothailand.com
+""",
+        'thai': """
+ข้อมูล SABOO THAILAND:
+
+โทรศัพท์: 062-897-8962
+โรงงาน: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C ราชดำริ: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt จตุจักร: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
+
+ก่อตั้งปี 2008 บริษัทแรกในไทยที่ผลิตสบู่ธรรมชาติรูปผลไม้
+ส่งออกไปกว่า 20 ประเทศ เว็บไซต์: www.saboothailand.com
+""",
+        'english': """
+SABOO THAILAND Company Information:
+
+Phone: 062-897-8962
+Factory: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C Ratchadamri: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt Chatuchak: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
+
+Founded in 2008, Thailand's first natural fruit-shaped soap manufacturer
+Exports to over 20 countries, Website: www.saboothailand.com
 """
-    language_data_cache[user_language] = default_info
+    }
+    
+    default_info = default_info_by_lang.get(user_language, default_info_by_lang['english'])
+    language_data_cache[cache_key] = default_info
     return default_info
 
 def initialize_data():
@@ -693,7 +713,7 @@ Based on the previous context, please provide a more detailed and specific expla
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
-        # 🔥 3. 일반적인 대화 처리 - 자연스럽게 개선됨
+        # 🔥 3. 일반적인 대화 처리 - 언어별 정확한 정보 사용
         company_info = fetch_company_info(user_language)
         if not company_info or len(company_info.strip()) < 50:
             logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
@@ -702,25 +722,28 @@ Based on the previous context, please provide a more detailed and specific expla
         user_context = get_user_context(user_id)
         context_section = f"\n\n[Previous Conversation Context]\n{user_context}" if user_context else ""
         
-        # 🔥 개선된 프롬프트 - 제한적이지 않고 자연스럽게
+        # 🔥 개선된 프롬프트 - 언어별 정확한 정보 우선, 일반 지식 보완
         prompt = f"""You are a friendly and professional customer service agent for SABOO THAILAND.
 
-Here is some basic information about our company:
+[COMPANY INFORMATION FOR {user_language.upper()} - THIS IS YOUR PRIMARY SOURCE OF TRUTH]
 {company_info}
 
-You may use your general knowledge about soaps, bath products, and skincare to answer customer questions naturally and helpfully. 
-
-Guidelines:
-- Always answer in the same language as the customer ({user_language})
-- Be warm and helpful like a real Thai staff member
-- Use light emojis 😊 for a friendly touch
-- If you don't know specific product details, it's okay to give general advice and suggest contacting us directly
-- For company-specific information (store location, contact info, etc.), refer to the company information above
+IMPORTANT RULES:
+1. For company-specific questions (store locations, phone numbers, addresses, contact info), you MUST use ONLY the exact information provided in the COMPANY INFORMATION section above.
+2. The company information above is specifically for {user_language} language users - use it exactly as written.
+3. Do NOT use any phone numbers, addresses, or contact information from your training data or other sources.
+4. For general questions about soaps, skincare, and bath products, you may use your general knowledge to be helpful.
+5. Always answer in {user_language} language.
+6. Be warm and helpful like a real Thai staff member.
+7. Use light emojis 😊 for a friendly touch.
+8. If the COMPANY INFORMATION doesn't contain specific product details, give general advice and suggest contacting us directly.
 
 {context_section}
 
 Customer question: {user_message}"""
 
+        logger.info(f"🌐 '{user_language}' 언어용 회사 정보를 사용하여 GPT 프롬프트 생성 완료")
+        
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
