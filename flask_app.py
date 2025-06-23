@@ -13,7 +13,7 @@ import os
 import re
 import threading
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 
 import requests
 from dotenv import load_dotenv
@@ -27,7 +27,7 @@ load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - [%(funcName)s] - %(message)s'
+    format='%(asctime)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
@@ -47,10 +47,10 @@ app = Flask(__name__)
 CHAT_LOG_DIR = "save_chat"
 
 # 전역 변수 초기화
-product_data_cache = {}
-product_last_update = None
-language_data_cache = {}
-user_context_cache = {}
+product_data_cache: Dict[str, str] = {}
+product_last_update: Optional[datetime] = None
+language_data_cache: Dict[str, str] = {}
+user_context_cache: Dict[str, List[Dict[str, Any]]] = {}
 app_initialized = False
 
 # OpenAI, LINE, Admin 설정
@@ -75,58 +75,51 @@ if not LINE_SECRET:
 if not ADMIN_API_KEY:
     logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
 
-
-# 제품 검색을 위한 키워드 매핑
-PRODUCT_KEYWORDS = {
-    # Bath Bombs
-    'bathbomb': ['bath bomb', 'bathbomb', '배스봄', '바스봄', 'บาธบอม', 'บอม', 'ลูกบอลอาบน้ำ'],
-    'bubble': ['bubble', '버블', 'บับเบิล', 'ฟอง'],
-    'fizzy': ['fizzy', '피지', 'ฟิซซี่', 'ฟิซ'],
-    
-    # Soap Types
-    'soap': ['soap', '비누', 'สบู่'],
-    'fancy': ['fancy', '팬시', 'แฟนซี'],
-    'natural': ['natural', '천연', 'ธรรมชาติ'],
-    'handmade': ['handmade', '수제', 'ทำมือ'],
-    
-    # Shapes & Ingredients (망고 추가)
-    'fruit': ['fruit', '과일', 'ผลไม้', 'mango', '망고', 'มะม่วง'],
-    'flower': ['flower', '꽃', 'ดอกไม้', 'jasmine', 'lavender', 'orchid'],
-    'animal': ['animal', '동물', 'สัตว์'],
-    'dinosaur': ['dinosaur', '공룡', 'ไดโนเสาร์'],
-    'elephant': ['elephant', '코끼리', 'ช้าง'],
-    'duck': ['duck', '오리', 'เป็ด'],
-    'bear': ['bear', '곰', 'หมี'],
-    
-    # Other Products
-    'scrub': ['scrub', '스크럽', 'สครับ'],
-    'perfume': ['perfume', '향수', 'น้ำหอม'],
-    'spray': ['spray', '스프레이', 'สเปรย์'],
-    'gel': ['gel', '젤', 'เจล'],
-    'gift': ['gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต'],
-    
-    # Price keywords
-    'price': ['price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee',
-              '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용',
-              'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
-              '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
-              '价格', '价钱', '多少钱', '费用', '成本', '定价',
-              'precio', 'precios', 'costo', 'cuanto', 'tarifa',
-              'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
-              'prix', 'coût', 'combien', 'tarif',
-              'цена', 'цены', 'стоимость', 'сколько'],
-    
-    # Sizes
-    '100g': ['100g', '100 g', '100gram'],
-    '150g': ['150g', '150 g', '150gram'],
-    '185g': ['185g', '185 g', '185gram'],
-    '500ml': ['500ml', '500 ml'],
-    '250ml': ['250ml', '250 ml'],
-    '25ml': ['25ml', '25 ml']
+# 제품 검색을 위한 키워드 매핑 (개선됨: 의도별로 재구성)
+INTENT_KEYWORDS = {
+    'product_names': [
+        'bath bomb', 'bathbomb', '배스봄', '바스봄', 'บาธบอม', 'บอม', 'ลูกบอลอาบน้ำ',
+        'bubble', '버블', 'บับเบิล', 'ฟอง', 'fizzy', '피지', 'ฟิซซี่', 'ฟิซ',
+        'soap', '비누', 'สบู่', 'fancy', '팬시', 'แฟนซี', 'natural', '천연', 'ธรรมชาติ',
+        'handmade', '수제', 'ทำมือ', 'scrub', '스크럽', 'สครับ',
+        'perfume', '향수', 'น้ำหอม', 'spray', '스프레이', 'สเปรย์', 'gel', '젤', 'เจล',
+        'shampoo', '샴푸', 'shower gel', '샤워젤', 'body lotion', '바디로션',
+        'room spray', '룸스프레이', 'diffuser', '디퓨저',
+        'fruit', '과일', 'ผลไม้', 'mango', '망고', 'มะม่วง', 'banana', '바나나',
+        'flower', '꽃', 'ดอกไม้', 'jasmine', 'lavender', 'orchid',
+        'animal', '동물', 'สัตว์', 'dinosaur', '공룡', 'ไดโนเสาร์',
+        'elephant', '코끼리', 'ช้าง', 'duck', '오리', 'เป็ด', 'bear', '곰', 'หมี',
+        'gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต',
+        '100g', '150g', '185g', '500ml', '250ml', '25ml'
+    ],
+    'purchase_intent': [
+        'price', 'prices', 'price list', 'cost', 'how much', 'pricing', 'rate', 'fee', 'buy', 'purchase',
+        '가격', '비누 가격', '팬시비누 가격', '비누가격', '얼마', '값', '요금', '비용', '구매', '살래',
+        'ราคา', 'สบู่ราคา', 'ราคาสบู่', 'เท่าไหร่', 'เท่าไร', 'ค่า', 'ค่าใช้จ่าย',
+        '価格', '値段', 'いくら', '料金', 'コスト', 'プライス',
+        '价格', '价钱', '多少钱', '费用', '成本', '定价',
+        'precio', 'precios', 'costo', 'cuanto', 'tarifa',
+        'preis', 'preise', 'kosten', 'wie viel', 'gebühr',
+        'prix', 'coût', 'combien', 'tarif',
+        'цена', 'цены', 'стоимость', 'сколько'
+    ],
+    'list_intent': [
+        'list', 'show me', 'types', 'kinds', 'available', 'what do you have', 'what products',
+        'looking for', 'search', 'find', 'sell',
+        '목록', '리스트', '종류', '뭐있어', '뭐', '뭘', '무엇', '어떤', '있어', '있나', '품목',
+        '보여줘', '알려줘', '찾', '파나', '팔아',
+        'สินค้า', 'ผลิตภัณฑ์', 'มีอะไร', 'ขาย', 'หา', 'ค้นหา', 'อะไร', 'ชนิด', 'ประเภท', 'รายการ',
+        '商品', '製品', '何', 'なに', '探', 'さが', 'ある', 'あります', 'リスト',
+        '产品', '商品', '什么', '哪些', '种类', '类型', '有什么', '列表', '寻找', '搜索',
+        'que', 'tipos', 'was', 'welche', 'arten', 'quoi', 'types', 'что', 'какие'
+    ],
+    'feature_intent': [
+        '특징', '방법', '성분', '차이', '어떻게', '왜', '장점', '단점', '사용법', '효과',
+        'feature', 'how to', 'ingredient', 'difference', 'what is', 'why', 'benefit', 'use',
+        'คุณสมบัติ', 'วิธีใช้', 'ส่วนผสม', 'ความแตกต่าง', 'ทำไม', 'ประโยชน์',
+        '특성', '설명', '어떤', '무엇인', '구성', '장단점'
+    ]
 }
-
-# (삭제됨) "더 자세한 정보" 안내 메시지는 더 이상 사용되지 않습니다.
-# MORE_INFO_MESSAGES = { ... }
 
 # "더 자세한 정보" 요청 키워드 감지
 MORE_INFO_KEYWORDS = {
@@ -142,7 +135,7 @@ MORE_INFO_KEYWORDS = {
     'russian': ['подробнее', 'расскажите больше', 'больше информации', 'подробное объяснение']
 }
 
-# 시스템 메시지 정의
+# 시스템 메시지 정의 (개선됨)
 SYSTEM_MESSAGE = """
 You are a knowledgeable and friendly Thai staff member of SABOO THAILAND.
 
@@ -151,6 +144,13 @@ Always reply in the **same language** the customer uses:
 - If the customer speaks English, answer in friendly and professional English
 - If the customer speaks Korean, answer in polite Korean
 - If another language is used, try to respond in that language
+
+**Core Rules:**
+1. **Your ONLY source of truth is the 'KNOWLEDGE BASE' text provided in the user's prompt.**
+2. **You are STRICTLY FORBIDDEN from using any external knowledge or making assumptions.** Do not answer based on your general training data.
+3. **If the answer to the user's question cannot be found within the 'KNOWLEDGE BASE', you MUST reply:** "죄송하지만 제가 가진 정보로는 답변드리기 어렵습니다. 직접 문의해주세요: 02-159-9880" (in Korean), or equivalent in the user's language.
+4. **Always answer in the same language as the user's question.**
+5. Read the entire 'KNOWLEDGE BASE' carefully before answering.
 
 IMPORTANT FALLBACK RULE: If there are any technical issues, errors, or problems that prevent you from accessing proper data or generating appropriate responses, ALWAYS switch to English and provide a helpful response in English, regardless of the customer's original language.
 
@@ -187,15 +187,13 @@ Key information about SABOO THAILAND:
 Products: Natural soaps (fruit-shaped), bath products, air fresheners, essential oils, scrubs, bath sets.
 """
 
-
 # ==============================================================================
 # 5. 헬퍼 함수 정의 (Helper Functions)
 # ==============================================================================
 
-def process_response_length(text: str, language: str, max_length: int = 500) -> tuple:
+def process_response_length(text: str, language: str, max_length: int = 500) -> Tuple[str, bool]:
     """
-    [수정됨] 응답 텍스트 길이를 500자로 체크하고, 초과 시 '...'로 축약합니다.
-    (추가 안내 문구는 제거되었습니다.)
+    응답 텍스트 길이를 500자로 체크하고, 초과 시 '...'로 축약합니다.
     """
     try:
         clean_text = re.sub(r'<[^>]+>', '', text)
@@ -217,7 +215,6 @@ def process_response_length(text: str, language: str, max_length: int = 500) -> 
     except Exception as e:
         logger.error(f"❌ 응답 길이 처리 중 오류: {e}")
         return text, False
-
 
 def is_more_info_request(user_message: str, detected_language: str) -> bool:
     """사용자가 더 자세한 정보를 요청하는지 확인"""
@@ -302,24 +299,15 @@ def load_product_files():
         logger.error(f"❌ 제품 파일 로드 중 오류: {e}")
         return False
 
-def search_products_by_keywords(user_query: str) -> List[Dict]:
-    """[개선됨] 사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (정확도 향상)"""
+def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
+    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (개선된 정확도)"""
     try:
         user_query_lower = user_query.lower()
         found_products = []
         
-        price_intent_keywords = PRODUCT_KEYWORDS['price']
-        list_intent_keywords = [
-            '어떤', '뭐', '뭘', '무엇', '종류', '있어', '있나', '품목', '목록', '리스트',
-            'what', 'which', 'types', 'kinds', 'available', 'have', 'list', 'products', 'items',
-            'อะไร', 'มีอะไร', 'ชนิด', 'ประเภท', 'รายการ', 'สินค้า',
-            '何', 'なに', '種類', 'タイプ', 'ある', 'あります', 'リスト',
-            '什么', '哪些', '种类', '类型', '有什么', '列表',
-            'que', 'tipos', 'was', 'welche', 'arten', 'quoi', 'types', 'что', 'какие'
-        ]
-        
-        is_price_query = any(keyword in user_query_lower for keyword in price_intent_keywords)
-        is_list_query = any(keyword in user_query_lower for keyword in list_intent_keywords)
+        # 의도 분석
+        is_price_query = any(keyword in user_query_lower for keyword in INTENT_KEYWORDS['purchase_intent'])
+        is_list_query = any(keyword in user_query_lower for keyword in INTENT_KEYWORDS['list_intent'])
         
         if not is_price_query and not is_list_query:
             is_list_query = True
@@ -339,24 +327,18 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
             elif is_list_query and not filename.endswith('_list.txt'):
                 continue
 
-            # 점수 계산 로직 개선
-            for category, keywords in PRODUCT_KEYWORDS.items():
-                if category == 'price': continue # 가격 키워드는 의도 파악에만 사용
-
-                for keyword in keywords:
-                    if keyword.lower() in query_words:
-                        # **핵심 개선**: 구체적인 키워드(예: 망고)가 파일명에 있으면 매우 높은 점수 부여
-                        if keyword.lower() in filename_lower:
-                            # 'soap', '비누' 같은 일반적인 단어보다 구체적인 단어에 더 높은 가중치
-                            if category not in ['soap', 'fancy']:
-                                relevance_score += 10  # 구체적인 키워드 매치 (예: mango)
-                            else:
-                                relevance_score += 3   # 일반적인 키워드 매치 (예: soap)
-                            matched_keywords.append(keyword)
-                        # 파일명에는 없지만, 카테고리가 일치하는 경우 (예: '과일 비누' 검색 시)
-                        elif category in filename_lower:
-                            relevance_score += 1
-                            matched_keywords.append(keyword)
+            # 점수 계산 로직
+            for keyword in query_words:
+                if keyword in filename_lower:
+                    # 구체적인 키워드(예: 망고)가 파일명에 있으면 매우 높은 점수 부여
+                    if keyword in INTENT_KEYWORDS['product_names']:
+                        if keyword not in ['soap', '비누', 'fancy', '팬시']:  # 일반적인 단어가 아닌 경우
+                            relevance_score += 10
+                        else:
+                            relevance_score += 3
+                        matched_keywords.append(keyword)
+                    else:
+                        relevance_score += 1
 
             if relevance_score > 0:
                 found_products.append({
@@ -374,7 +356,7 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
         
         file_type = 'price' if is_price_query else 'list'
         logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 {file_type} 파일을 찾았습니다.")
-        return found_products[:5] # 상위 5개만 반환
+        return found_products[:5]  # 상위 5개만 반환
     except Exception as e:
         logger.error(f"❌ 제품 검색 중 오류: {e}")
         return []
@@ -393,8 +375,20 @@ def get_product_info(user_query: str, language: str = 'english', detailed: bool 
         file_type = top_product.get('file_type', 'list')
         
         headers = {
-            'price': {'thai': "💰 ราคาสินค้าที่ท่าน 찾으시는 것 같아요:", 'korean': "💰 찾으시는 제품의 가격 정보입니다:", 'japanese': "💰 お探しの商品の価格情報:", 'chinese': "💰 您查找的产品价格信息:", 'english': "💰 Here is the price information for the product you're looking for:"},
-            'list': {'thai': "🛍️ รายการสินค้าที่ท่าน 찾으시는 것 같아요:", 'korean': "🛍️ 찾으시는 제품 목록입니다:", 'japanese': "🛍️ お探しの商品一覧:", 'chinese': "🛍️ 您查找的产品列表:", 'english': "🛍️ Here is the product list you're looking for:"}
+            'price': {
+                'thai': "💰 ราคาสินค้าที่ท่านค้นหา:",
+                'korean': "💰 찾으시는 제품의 가격 정보입니다:",
+                'japanese': "💰 お探しの商品の価格情報:",
+                'chinese': "💰 您查找的产品价格信息:",
+                'english': "💰 Here is the price information for the product you're looking for:"
+            },
+            'list': {
+                'thai': "🛍️ รายการสินค้าที่ท่านค้นหา:",
+                'korean': "🛍️ 찾으시는 제품 목록입니다:",
+                'japanese': "🛍️ お探しの商品一覧:",
+                'chinese': "🛍️ 您查找的产品列表:",
+                'english': "🛍️ Here is the product list you're looking for:"
+            }
         }
         response_parts.append(headers[file_type].get(language, headers[file_type]['english']))
         
@@ -456,33 +450,35 @@ def get_error_message(language: str) -> str:
     return messages.get(language, messages['english'])
 
 def is_product_search_query(user_message: str) -> bool:
-    """사용자 메시지가 제품 검색 쿼리인지 판단"""
+    """사용자 메시지가 제품 검색 쿼리인지 판단 (개선됨)"""
     try:
-        user_message_lower = user_message.lower()
-        for category_keywords in PRODUCT_KEYWORDS.values():
-            for keyword in category_keywords:
-                if keyword.lower() in user_message_lower:
-                    return True
+        msg_lower = user_message.lower()
         
-        search_indicators = [
-            'product', 'products', 'item', 'items', 'what do you have', 'what products',
-            'show me', 'looking for', 'search', 'find', 'available', 'sell',
-            '제품', '상품', '뭐', '뭘', '무엇', '어떤', '찾', '있나', '파나', '팔아',
-            'สินค้า', 'ผลิตภัณฑ์', 'มีอะไร', 'ขาย', 'หา', 'ค้นหา',
-            '商品', '製品', '何', 'なに', '探', 'さが',
-            '产品', '商品', '什么', '寻找', '搜索'
-        ]
-        for indicator in search_indicators:
-            if indicator in user_message_lower:
-                return True
+        # 제품명이 포함되어 있는지 확인
+        has_product = any(keyword in msg_lower for keyword in INTENT_KEYWORDS['product_names'])
+        if not has_product:
+            return False
+        
+        # 검색 의도가 있는지 확인
+        has_search_intent = any(keyword in msg_lower for keyword in 
+                               INTENT_KEYWORDS['purchase_intent'] + INTENT_KEYWORDS['list_intent'])
+        
+        # 특징/설명 질문인지 확인
+        is_feature_q = any(keyword in msg_lower for keyword in INTENT_KEYWORDS['feature_intent'])
+        
+        if is_feature_q:
+            logger.info("🎯 의도 분석: 설명 질문 (Q&A 처리)")
+            return False
+        
+        # '가격' 등 검색 의도가 있거나, '망고 비누'처럼 제품명만 짧게 말한 경우
+        if has_search_intent or len(msg_lower.split()) <= 3:
+            logger.info("🎯 의도 분석: 제품 검색")
+            return True
+            
         return False
     except Exception as e:
         logger.error(f"❌ 제품 검색 쿼리 판단 중 오류: {e}")
         return False
-
-# ... 이하 나머지 코드는 이전과 동일합니다 ...
-# The rest of the code (format_text_for_messenger, format_text_for_line, fetch_company_info, etc.)
-# remains the same as the previously corrected version. I will append it here.
 
 def format_text_for_messenger(text: str) -> str:
     """웹/메신저용: \n → <br> 로 변환하고 마크다운을 HTML로 변환"""
@@ -517,7 +513,12 @@ def fetch_company_info(user_language: str) -> str:
         logger.info(f"📋 캐시된 '{user_language}' 회사 정보를 사용합니다.")
         return language_data_cache[user_language]
 
-    lang_map = {'thai': 'th', 'english': 'en', 'korean': 'kr', 'japanese': 'ja', 'german': 'de', 'spanish': 'es', 'arabic': 'ar', 'chinese': 'zh_cn', 'taiwanese': 'zh_tw', 'vietnamese': 'vi', 'myanmar': 'my', 'khmer': 'km', 'russian': 'ru', 'french': 'fr'}
+    lang_map = {
+        'thai': 'th', 'english': 'en', 'korean': 'kr', 'japanese': 'ja', 
+        'german': 'de', 'spanish': 'es', 'arabic': 'ar', 'chinese': 'zh_cn', 
+        'taiwanese': 'zh_tw', 'vietnamese': 'vi', 'myanmar': 'my', 
+        'khmer': 'km', 'russian': 'ru', 'french': 'fr'
+    }
     lang_code = lang_map.get(user_language, 'en')
     filepath = os.path.join("company_info", f"company_info_{lang_code}.txt")
 
@@ -702,7 +703,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
         
         user_context = get_user_context(user_id)
         context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
-        prompt = f"""[Company Info - Language: {user_language}]\n{company_info}{context_section}\n\n(Important: If the customer's question is about shipping, products, or company information, you must find the information in the company info text above!)\n\n[Detected User Language: {user_language}]\n[User's Question]\n{user_message}"""
+        prompt = f"""[KNOWLEDGE BASE - Language: {user_language}]\n{company_info}{context_section}\n\n(Important: If the customer's question is about shipping, products, or company information, you must find the information in the KNOWLEDGE BASE text above!)\n\n[Detected User Language: {user_language}]\n[User's Question]\n{user_message}"""
 
         completion = client.chat.completions.create(
             model="gpt-4o",
@@ -710,7 +711,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
                 {"role": "system", "content": SYSTEM_MESSAGE},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=800, temperature=0.7, timeout=25
+            max_tokens=800, temperature=0.3, timeout=25
         )
         response_text = completion.choices[0].message.content.strip()
 
@@ -852,7 +853,7 @@ def products_status():
         "product_files": list(product_data_cache.keys()),
         "last_update": product_last_update.isoformat() if product_last_update else None,
         "price_list_folder_exists": os.path.exists("price_list"),
-        "sample_keywords": dict(list(PRODUCT_KEYWORDS.items())[:5]),
+        "sample_keywords": dict(list(INTENT_KEYWORDS.items())[:3]),
         "more_info_keywords_count": {lang: len(keywords) for lang, keywords in MORE_INFO_KEYWORDS.items()}
     })
 
@@ -878,12 +879,16 @@ def search_products_endpoint():
         })
     return jsonify(result)
 
-
 @app.route('/reload-products')
 def reload_products():
     """제품 데이터 다시 로드"""
     if load_product_files():
-        return jsonify({"status": "success", "message": "제품 데이터가 성공적으로 다시 로드되었습니다.", "loaded_files": len(product_data_cache), "timestamp": datetime.now().isoformat()})
+        return jsonify({
+            "status": "success", 
+            "message": "제품 데이터가 성공적으로 다시 로드되었습니다.", 
+            "loaded_files": len(product_data_cache), 
+            "timestamp": datetime.now().isoformat()
+        })
     else:
         return jsonify({"status": "error", "message": "제품 데이터 로드에 실패했습니다."}), 500
 
@@ -1015,8 +1020,9 @@ if __name__ == '__main__':
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
     logger.info("📂 데이터 소스: company_info 폴더 + price_list 폴더 개별 파일 검색")
-    logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 (500자, 추가 안내 없음)")
+    logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 (500자)")
     logger.info("🧠 대화 컨텍스트: 사용자별 최근 대화 기억")
+    logger.info("🎯 개선된 질문 의도 파악: 제품 검색 vs 일반 Q&A 정확히 구분")
     
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=not debug_mode)
