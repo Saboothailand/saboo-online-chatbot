@@ -75,21 +75,51 @@ if not LINE_SECRET:
 if not ADMIN_API_KEY:
     logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
 
-# 제품 검색을 위한 키워드 매핑 (개선됨: 의도별로 재구성)
+# 제품 검색을 위한 키워드 매핑 (🔥 다국어 강화)
 INTENT_KEYWORDS = {
     'product_names': [
-        'bath bomb', 'bathbomb', '배스봄', '바스봄', 'บาธบอม', 'บอม', 'ลูกบอลอาบน้ำ',
-        'bubble', '버블', 'บับเบิล', 'ฟอง', 'fizzy', '피지', 'ฟิซซี่', 'ฟิซ',
-        'soap', '비누', 'สบู่', 'fancy', '팬시', 'แฟนซี', 'natural', '천연', 'ธรรมชาติ',
-        'handmade', '수제', 'ทำมือ', 'scrub', '스크럽', 'สครับ',
-        'perfume', '향수', 'น้ำหอม', 'spray', '스프레이', 'สเปรย์', 'gel', '젤', 'เจล',
-        'shampoo', '샴푸', 'shower gel', '샤워젤', 'body lotion', '바디로션',
-        'room spray', '룸스프레이', 'diffuser', '디퓨저',
-        'fruit', '과일', 'ผลไม้', 'mango', '망고', 'มะม่วง', 'banana', '바나나',
-        'flower', '꽃', 'ดอกไม้', 'jasmine', 'lavender', 'orchid',
-        'animal', '동물', 'สัตว์', 'dinosaur', '공룡', 'ไดโนเสาร์',
-        'elephant', '코끼리', 'ช้าง', 'duck', '오리', 'เป็ด', 'bear', '곰', 'หมี',
-        'gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต',
+        # 🔥 기본 제품 타입 (다국어)
+        'bath bomb', 'bathbomb', '배스봄', '바스봄', '목욕폭탄', 'บาธบอม', 'บอม', 'ลูกบอลอาบน้ำ', 'バスボム', '泡澡球', '沐浴球', 'bomba de baño', 'badebombe', 'bombe de bain',
+        'bubble', '버블', 'บับเบิล', 'ฟอง', 'バブル', '泡泡', 'burbuja', 'blase', 'bulle',
+        'soap', '비누', '소프', 'สบู่', '石鹸', 'ソープ', '肥皂', 'jabón', 'seife', 'savon', 'мыло',
+        'scrub', '스크럽', '각질제거', 'สครับ', 'スクラブ', '磨砂膏', 'exfoliante', 'peeling', 'gommage',
+        'perfume', '향수', '퍼퓨', 'น้ำหอม', '香水', 'perfume', 'parfüm', 'духи',
+        'spray', '스프레이', '분무기', 'สเปรย์', 'スプレー', '喷雾', 'aerosol',
+        
+        # 🔥 구체적인 제품명 (과일류)
+        'mango', '망고', 'มะม่วง', 'マンゴー', '芒果', 'манго',
+        'banana', '바나나', 'กล้วย', 'バナナ', '香蕉', 'plátano', 'banane', 'банан',
+        'apple', '사과', 'แอปเปิ้ล', 'リンゴ', '苹果', 'manzana', 'apfel', 'pomme', 'яблоко',
+        'orange', '오렌지', 'ส้ม', 'オレンジ', '橙子', 'naranja', 'orange', 'апельсин',
+        'strawberry', '딸기', 'สตรอเบอรี่', 'イチゴ', '草莓', 'fresa', 'erdbeere', 'fraise', 'клубника',
+        
+        # 🔥 구체적인 제품명 (꽃류)
+        'jasmine', '재스민', '자스민', 'ดอกมะลิ', 'มะลิ', 'ジャスミン', '茉莉花', '茉莉', 'jazmín', 'jasmin', 'жасмин',
+        'lavender', '라벤더', 'ลาเวนเดอร์', 'ラベンダー', '薰衣草', 'lavanda', 'lavendel', 'lavande', 'лаванда',
+        'rose', '장미', '로즈', 'กุหลาบ', 'ローズ', 'バラ', '玫瑰', 'rosa', 'роза',
+        'orchid', '난초', 'กล้วยไม้', 'ラン', '兰花', 'orquídea', 'orchidee', 'орхидея',
+        
+        # 🔥 구체적인 제품명 (동물류)
+        'elephant', '코끼리', 'ช้าง', 'ゾウ', '大象', 'elefante', 'elefant', 'éléphant', 'слон',
+        'duck', '오리', 'เป็ด', 'アヒル', 'カモ', '鸭子', 'pato', 'ente', 'canard', 'утка',
+        'bear', '곰', '베어', 'หมี', 'クマ', '熊', 'oso', 'bär', 'ours', 'медведь',
+        'dinosaur', '공룡', '다이노소어', 'ไดโนเสาร์', '恐竜', '恐龙', 'dinosaurio', 'dinosaurier', 'dinosaure', 'динозавр',
+        'cat', '고양이', 'แมว', 'ネコ', '猫', 'gato', 'katze', 'chat', 'кошка',
+        'dog', '강아지', 'หมา', 'イヌ', '狗', 'perro', 'hund', 'chien', 'собака',
+        
+        # 🔥 구체적인 제품명 (허브/향료류)  
+        'peppermint', '페퍼민트', '민트', '멘톨', 'เปปเปอร์มินต์', 'มินต์', 'เมนทอล', 'ペパーミント', 'ミント', '薄荷', 'menta', 'mentol', 'minze', 'pfefferminz', 'menthe', 'menthol',
+        'vanilla', '바닐라', 'วานิลลา', 'バニラ', '香草', 'vainilla', 'vanille', 'ваниль',
+        'coconut', '코코넛', 'มะพร้าว', 'ココナッツ', '椰子', 'coco', 'kokosnuss', 'noix de coco', 'кокос',
+        'honey', '꿀', 'น้ำผึ้ง', 'ハチミツ', '蜂蜜', 'miel', 'honig', 'мёд',
+        'milk', '우유', 'นม', 'ミルク', '牛奶', 'leche', 'milch', 'lait', 'молоко',
+        
+        # 기타
+        'natural', '천연', 'ธรรมชาติ', '天然', 'natural', 'natürlich', 'naturel', 'натуральный',
+        'handmade', '수제', 'ทำมือ', '手作り', '手工', 'hecho a mano', 'handgemacht', 'fait main', 'ручной работы',
+        'gel', '젤', 'เจล', 'ジェル', '凝胶', 'gel', 'гель',
+        'shampoo', '샴푸', 'แชมพู', 'シャンプー', '洗发水', 'champú', 'шампунь',
+        'gift', 'set', '선물', '세트', 'ของขวัญ', 'เซ็ต', 'ギフト', 'セット', '礼物', '套装', 'regalo', 'conjunto', 'geschenk', 'set', 'cadeau', 'ensemble', 'подарок', 'набор',
         '100g', '150g', '185g', '500ml', '250ml', '25ml'
     ],
     'purchase_intent': [
@@ -121,6 +151,145 @@ INTENT_KEYWORDS = {
     ]
 }
 
+# 🔥 포괄적인 다국어 제품명 매핑 테이블
+PRODUCT_NAME_MAPPING = {
+    # 페퍼민트/민트 관련 (7개 언어)
+    '페퍼민트': 'peppermint', '민트': 'peppermint', '멘톨': 'peppermint',  # 한국어
+    'เปปเปอร์มินต์': 'peppermint', 'มินต์': 'peppermint', 'เมนทอล': 'peppermint',  # 태국어
+    'ペパーミント': 'peppermint', 'ミント': 'peppermint',  # 일본어
+    '薄荷': 'peppermint', '薄荷糖': 'peppermint',  # 중국어
+    'menta': 'peppermint', 'mentol': 'peppermint',  # 스페인어
+    'minze': 'peppermint', 'pfefferminz': 'peppermint',  # 독일어
+    'menthe': 'peppermint', 'menthol': 'peppermint',  # 프랑스어
+    
+    # 망고 관련 (7개 언어)
+    '망고': 'mango',  # 한국어
+    'มะม่วง': 'mango',  # 태국어
+    'マンゴー': 'mango',  # 일본어
+    '芒果': 'mango',  # 중국어
+    'манго': 'mango',  # 러시아어
+    
+    # 바나나 관련 (7개 언어)
+    '바나나': 'banana',  # 한국어
+    'กล้วย': 'banana',  # 태국어
+    'バナナ': 'banana',  # 일본어
+    '香蕉': 'banana',  # 중국어
+    'plátano': 'banana',  # 스페인어
+    'banane': 'banana',  # 독일어/프랑스어
+    'банан': 'banana',  # 러시아어
+    
+    # 재스민 관련 (7개 언어)
+    '재스민': 'jasmine', '자스민': 'jasmine',  # 한국어
+    'ดอกมะลิ': 'jasmine', 'มะลิ': 'jasmine',  # 태국어
+    'ジャスミン': 'jasmine',  # 일본어
+    '茉莉花': 'jasmine', '茉莉': 'jasmine',  # 중국어
+    'jazmín': 'jasmine',  # 스페인어
+    'jasmin': 'jasmine',  # 독일어/프랑스어
+    'жасмин': 'jasmine',  # 러시아어
+    
+    # 라벤더 관련 (7개 언어)
+    '라벤더': 'lavender',  # 한국어
+    'ลาเวนเดอร์': 'lavender',  # 태국어
+    'ラベンダー': 'lavender',  # 일본어
+    '薰衣草': 'lavender',  # 중국어
+    'lavanda': 'lavender',  # 스페인어
+    'lavendel': 'lavender',  # 독일어
+    'lavande': 'lavender',  # 프랑스어
+    'лаванда': 'lavender',  # 러시아어
+    
+    # 장미 관련 (7개 언어)
+    '장미': 'rose', '로즈': 'rose',  # 한국어
+    'กุหลาบ': 'rose',  # 태국어
+    'ローズ': 'rose', 'バラ': 'rose',  # 일본어
+    '玫瑰': 'rose',  # 중국어
+    'rosa': 'rose',  # 스페인어
+    'rose': 'rose',  # 독일어/프랑스어/영어
+    'роза': 'rose',  # 러시아어
+    
+    # 코끼리 관련 (7개 언어)
+    '코끼리': 'elephant',  # 한국어
+    'ช้าง': 'elephant',  # 태국어
+    'ゾウ': 'elephant',  # 일본어
+    '大象': 'elephant',  # 중국어
+    'elefante': 'elephant',  # 스페인어
+    'elefant': 'elephant',  # 독일어
+    'éléphant': 'elephant',  # 프랑스어
+    'слон': 'elephant',  # 러시아어
+    
+    # 오리 관련 (7개 언어)
+    '오리': 'duck',  # 한국어
+    'เป็ด': 'duck',  # 태국어
+    'アヒル': 'duck', 'カモ': 'duck',  # 일본어
+    '鸭子': 'duck',  # 중국어
+    'pato': 'duck',  # 스페인어
+    'ente': 'duck',  # 독일어
+    'canard': 'duck',  # 프랑스어
+    'утка': 'duck',  # 러시아어
+    
+    # 곰 관련 (7개 언어)
+    '곰': 'bear', '베어': 'bear',  # 한국어
+    'หมี': 'bear',  # 태국어
+    'クマ': 'bear',  # 일본어
+    '熊': 'bear',  # 중국어
+    'oso': 'bear',  # 스페인어
+    'bär': 'bear',  # 독일어
+    'ours': 'bear',  # 프랑스어
+    'медведь': 'bear',  # 러시아어
+    
+    # 공룡 관련 (7개 언어)
+    '공룡': 'dinosaur', '다이노소어': 'dinosaur',  # 한국어
+    'ไดโนเสาร์': 'dinosaur',  # 태국어
+    '恐竜': 'dinosaur',  # 일본어
+    '恐龙': 'dinosaur',  # 중국어
+    'dinosaurio': 'dinosaur',  # 스페인어
+    'dinosaurier': 'dinosaur',  # 독일어
+    'dinosaure': 'dinosaur',  # 프랑스어
+    'динозавр': 'dinosaur',  # 러시아어
+    
+    # 비누 관련 (7개 언어)
+    '비누': 'soap', '소프': 'soap',  # 한국어
+    'สบู่': 'soap',  # 태국어
+    '石鹸': 'soap', 'ソープ': 'soap',  # 일본어
+    '肥皂': 'soap',  # 중국어
+    'jabón': 'soap',  # 스페인어
+    'seife': 'soap',  # 독일어
+    'savon': 'soap',  # 프랑스어
+    'мыло': 'soap',  # 러시아어
+    
+    # 배스봄 관련 (7개 언어)
+    '배스봄': 'bathbomb', '바스봄': 'bathbomb', '목욕폭탄': 'bathbomb',  # 한국어
+    'บาธบอม': 'bathbomb', 'บอมอาบน้ำ': 'bathbomb',  # 태국어
+    'バスボム': 'bathbomb',  # 일본어
+    '泡澡球': 'bathbomb', '沐浴球': 'bathbomb',  # 중국어
+    'bomba de baño': 'bathbomb',  # 스페인어
+    'badebombe': 'bathbomb',  # 독일어
+    'bombe de bain': 'bathbomb',  # 프랑스어
+    
+    # 스크럽 관련 (7개 언어)
+    '스크럽': 'scrub', '각질제거': 'scrub',  # 한국어
+    'สครับ': 'scrub',  # 태국어
+    'スクラブ': 'scrub',  # 일본어
+    '磨砂膏': 'scrub',  # 중국어
+    'exfoliante': 'scrub',  # 스페인어
+    'peeling': 'scrub',  # 독일어
+    'gommage': 'scrub',  # 프랑스어
+    
+    # 향수/스프레이 관련
+    '향수': 'perfume', '퍼퓨': 'perfume',  # 한국어
+    'น้ำหอม': 'perfume',  # 태국어
+    '香水': 'perfume',  # 일본어/중국어
+    'perfume': 'perfume',  # 스페인어/프랑스어
+    'parfüm': 'perfume',  # 독일어
+    'духи': 'perfume',  # 러시아어
+    
+    '스프레이': 'spray', '분무기': 'spray',  # 한국어
+    'สเปรย์': 'spray',  # 태국어
+    'スプレー': 'spray',  # 일본어
+    '喷雾': 'spray',  # 중국어
+    'aerosol': 'spray',  # 스페인어
+    'spray': 'spray',  # 독일어/프랑스어/영어
+}
+
 # "더 자세한 정보" 요청 키워드 감지
 MORE_INFO_KEYWORDS = {
     'thai': ['รายละเอียดเพิ่มเติม', 'ข้อมูลเพิ่มเติม', 'อธิบายเพิ่ม', 'บอกเพิ่ม', 'เพิ่มเติม', 'รายละเอียด'],
@@ -135,38 +304,19 @@ MORE_INFO_KEYWORDS = {
     'russian': ['подробнее', 'расскажите больше', 'больше информации', 'подробное объяснение']
 }
 
-# 시스템 메시지 정의 (개선됨)
-SYSTEM_MESSAGE = """
-You are a knowledgeable and friendly Thai staff member of SABOO THAILAND.
+# 🔥 개선된 시스템 메시지 - 정확한 정보 우선
+NATURAL_SYSTEM_MESSAGE = """You are a knowledgeable and friendly customer service representative for SABOO THAILAND, a natural soap and bath product company.
 
-Always reply in the **same language** the customer uses:
-- If the customer speaks Thai, answer in polite and gentle Thai using "ค่ะ" or "คะ"
-- If the customer speaks English, answer in friendly and professional English
-- If the customer speaks Korean, answer in polite Korean
-- If another language is used, try to respond in that language
+CRITICAL RULES:
+1. For company-specific information (phone numbers, addresses, store locations, contact details), you MUST use ONLY the exact information provided in the user's prompt under "COMPANY INFORMATION"
+2. Do NOT use any phone numbers, addresses, or contact information from your training data
+3. For general questions about soaps, skincare, and bath products, you may use your knowledge to be helpful
+4. Always reply in the same language as the customer
+5. Be warm, helpful, and professional like a real Thai staff member
+6. Use light emojis to be friendly but don't overuse them
+7. When you don't know specific product details, give general helpful advice and suggest contacting the store
 
-**Core Rules:**
-1. **Your ONLY source of truth is the 'KNOWLEDGE BASE' text provided in the user's prompt.**
-2. **You are STRICTLY FORBIDDEN from using any external knowledge or making assumptions.** Do not answer based on your general training data.
-3. **If the answer to the user's question cannot be found within the 'KNOWLEDGE BASE', you MUST reply:** "죄송하지만 제가 가진 정보로는 답변드리기 어렵습니다. 직접 문의해주세요: 02-159-9880" (in Korean), or equivalent in the user's language.
-4. **Always answer in the same language as the user's question.**
-5. Read the entire 'KNOWLEDGE BASE' carefully before answering.
-
-IMPORTANT FALLBACK RULE: If there are any technical issues, errors, or problems that prevent you from accessing proper data or generating appropriate responses, ALWAYS switch to English and provide a helpful response in English, regardless of the customer's original language.
-
-Be warm and helpful like a Thai staff member who truly wants to assist the customer.
-Use light emojis 😊 to create a friendly and human touch, but do not overuse them.
-
-Important information to remember:
-- SABOO THAILAND was founded in 2008
-- First Thai company to create fruit-shaped soap
-- Exported to over 20 countries worldwide
-- Store location: Mixt Chatuchak, 2nd Floor
-- Factory: Pathum Thani
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-"""
+Remember: Company information accuracy is CRITICAL for customer trust! 😊"""
 
 ENGLISH_FALLBACK_MESSAGE = """
 You are a helpful customer service representative for SABOO THAILAND.
@@ -300,7 +450,7 @@ def load_product_files():
         return False
 
 def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
-    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (개선된 정확도)"""
+    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (🔥 다국어 매핑 강화)"""
     try:
         user_query_lower = user_query.lower()
         found_products = []
@@ -314,7 +464,18 @@ def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
         
         logger.info(f"🎯 쿼리 의도 분석: 가격={is_price_query}, 목록={is_list_query}")
         
-        query_words = set(re.findall(r'\b\w+\b', user_query_lower))
+        # 🔥 다국어 제품명을 영어로 변환
+        translated_query = user_query_lower
+        for local_name, english_name in PRODUCT_NAME_MAPPING.items():
+            if local_name.lower() in user_query_lower:
+                translated_query = translated_query.replace(local_name.lower(), english_name)
+                logger.info(f"🌐 제품명 변환: '{local_name}' → '{english_name}'")
+        
+        query_words = set(re.findall(r'\b\w+\b', translated_query))
+        original_words = set(re.findall(r'\b\w+\b', user_query_lower))
+        all_search_words = query_words.union(original_words)  # 원본과 번역본 모두 검색
+        
+        logger.info(f"🔍 검색 키워드: {all_search_words}")
 
         for filename, content in product_data_cache.items():
             relevance_score = 0
@@ -327,11 +488,15 @@ def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
             elif is_list_query and not filename.endswith('_list.txt'):
                 continue
 
-            # 점수 계산 로직
-            for keyword in query_words:
+            # 🔥 개선된 점수 계산 로직
+            for keyword in all_search_words:
                 if keyword in filename_lower:
-                    # 구체적인 키워드(예: 망고)가 파일명에 있으면 매우 높은 점수 부여
-                    if keyword in INTENT_KEYWORDS['product_names']:
+                    # 구체적인 제품명이 파일명에 있으면 매우 높은 점수
+                    if keyword in ['peppermint', 'mango', 'banana', 'jasmine', 'lavender', 'elephant', 'duck', 'bear', 'dinosaur']:
+                        relevance_score += 15  # 구체적 제품명은 높은 점수
+                        matched_keywords.append(keyword)
+                        logger.info(f"🎯 구체적 제품명 매칭: '{keyword}' in '{filename}'")
+                    elif keyword in INTENT_KEYWORDS['product_names']:
                         if keyword not in ['soap', '비누', 'fancy', '팬시']:  # 일반적인 단어가 아닌 경우
                             relevance_score += 10
                         else:
@@ -339,6 +504,11 @@ def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
                         matched_keywords.append(keyword)
                     else:
                         relevance_score += 1
+                
+                # 🔥 파일 내용에서도 검색 (추가 보완)
+                if keyword in content.lower():
+                    relevance_score += 2
+                    logger.info(f"📄 파일 내용에서 매칭: '{keyword}' in '{filename}' content")
 
             if relevance_score > 0:
                 found_products.append({
@@ -353,6 +523,8 @@ def search_products_by_keywords(user_query: str) -> List[Dict[str, Any]]:
         
         if found_products:
             logger.info(f"🏆 최고 점수 파일: {found_products[0]['filename']} (점수: {found_products[0]['relevance_score']})")
+        else:
+            logger.warning(f"❌ '{user_query}'에 대한 제품을 찾지 못했습니다. 사용 가능한 파일: {list(product_data_cache.keys())}")
         
         file_type = 'price' if is_price_query else 'list'
         logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 {file_type} 파일을 찾았습니다.")
@@ -509,9 +681,12 @@ def format_text_for_line(text: str) -> str:
 def fetch_company_info(user_language: str) -> str:
     """언어별 company_info.txt 파일을 읽어오고, 결과를 캐시에 저장합니다."""
     global language_data_cache
-    if user_language in language_data_cache:
+    
+    # 캐시 키를 언어별로 구분
+    cache_key = f"company_info_{user_language}"
+    if cache_key in language_data_cache:
         logger.info(f"📋 캐시된 '{user_language}' 회사 정보를 사용합니다.")
-        return language_data_cache[user_language]
+        return language_data_cache[cache_key]
 
     lang_map = {
         'thai': 'th', 'english': 'en', 'korean': 'kr', 'japanese': 'ja', 
@@ -528,7 +703,7 @@ def fetch_company_info(user_language: str) -> str:
                 content = f.read().strip()
                 if len(content) > 20:
                     logger.info(f"✅ '{user_language}' 회사 정보를 {filepath} 파일에서 성공적으로 로드했습니다.")
-                    language_data_cache[user_language] = content
+                    language_data_cache[cache_key] = content
                     return content
     except Exception as e:
         logger.error(f"❌ {filepath} 파일 로드 중 오류 발생: {e}")
@@ -541,26 +716,52 @@ def fetch_company_info(user_language: str) -> str:
                 content = f.read().strip()
                 if len(content) > 20:
                     logger.info(f"✅ 영어 버전({fallback_filepath})을 폴백으로 사용합니다.")
-                    language_data_cache[user_language] = content
+                    language_data_cache[cache_key] = content
                     return content
     except Exception as e:
         logger.error(f"❌ {fallback_filepath} 파일 로드 중 오류 발생: {e}")
 
-    logger.warning("⚠️ 모든 파일 로드에 실패하여, 하드코딩된 기본 정보를 사용합니다.")
-    default_info = """
-Welcome to SABOO THAILAND! 
+    logger.warning("⚠️ 모든 파일 로드에 실패하여, 언어별 하드코딩된 기본 정보를 사용합니다.")
+    
+    # 🔥 언어별 기본 정보 제공
+    default_info_by_lang = {
+        'korean': """
+SABOO THAILAND 회사 정보:
 
-We are Thailand's first natural fruit-shaped soap manufacturer since 2008.
-- Store: Mixt Chatuchak, 2nd Floor, Bangkok
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-- Email: saboothailand@gmail.com
+전화: 062-897-8962
+공장: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C 라차담리: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt 짜뚜짝: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
 
-Products: Natural soaps, bath products, air fresheners, essential oils.
-Feel free to ask us anything! 😊
+2008년 설립, 태국 최초 과일 모양 천연 비누 제조회사
+20개국 이상 수출, 웹사이트: www.saboothailand.com
+""",
+        'thai': """
+ข้อมูล SABOO THAILAND:
+
+โทรศัพท์: 062-897-8962
+โรงงาน: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C ราชดำริ: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt จตุจักร: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
+
+ก่อตั้งปี 2008 บริษัทแรกในไทยที่ผลิตสบู่ธรรมชาติรูปผลไม้
+ส่งออกไปกว่า 20 ประเทศ เว็บไซต์: www.saboothailand.com
+""",
+        'english': """
+SABOO THAILAND Company Information:
+
+Phone: 062-897-8962
+Factory: https://maps.app.goo.gl/7kXY4zmYWkxWYp5G9
+Big C Ratchadamri: https://maps.app.goo.gl/RXGhSGbh2nYwkMb38
+Mixt Chatuchak: https://maps.app.goo.gl/6jp92vRAmG4ftzvu7
+
+Founded in 2008, Thailand's first natural fruit-shaped soap manufacturer
+Exports to over 20 countries, Website: www.saboothailand.com
 """
-    language_data_cache[user_language] = default_info
+    }
+    
+    default_info = default_info_by_lang.get(user_language, default_info_by_lang['english'])
+    language_data_cache[cache_key] = default_info
     return default_info
 
 def initialize_data():
@@ -656,6 +857,7 @@ def add_hyperlinks(text: str) -> str:
         logger.error(f"❌ 하이퍼링크 변환 중 오류 발생: {e}")
         return text
 
+# 🔥 핵심 개선: 자연스러운 GPT 응답 생성 함수
 def get_gpt_response(user_message, user_id="anonymous"):
     """
     핵심 응답 생성 함수.
@@ -682,11 +884,18 @@ def get_gpt_response(user_message, user_id="anonymous"):
             logger.info("📋 더 자세한 정보 요청으로 감지되었습니다.")
             user_context = get_user_context(user_id)
             if user_context:
-                prompt = f"""[Previous Conversation Context]\n{user_context}\n\n[Current Request]\nThe user is asking for more details with the phrase: "{user_message}"\n\nBased on the previous context, please provide a more detailed and specific explanation in the user's language ({user_language})."""
+                prompt = f"""[Previous Conversation Context]
+{user_context}
+
+[Current Request]
+The user is asking for more details with the phrase: "{user_message}"
+
+Based on the previous context, please provide a more detailed and specific explanation in the user's language ({user_language})."""
+                
                 completion = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
-                        {"role": "system", "content": SYSTEM_MESSAGE},
+                        {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=1000, temperature=0.7, timeout=25
@@ -695,23 +904,47 @@ def get_gpt_response(user_message, user_id="anonymous"):
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
-        # 3. 일반적인 대화 처리
+        # 🔥 3. 일반적인 대화 처리 - 언어별 정확한 정보 사용
         company_info = fetch_company_info(user_language)
         if not company_info or len(company_info.strip()) < 50:
             logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
             return get_english_fallback_response(user_message, "Company data temporarily unavailable")
         
         user_context = get_user_context(user_id)
-        context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
-        prompt = f"""[KNOWLEDGE BASE - Language: {user_language}]\n{company_info}{context_section}\n\n(Important: If the customer's question is about shipping, products, or company information, you must find the information in the KNOWLEDGE BASE text above!)\n\n[Detected User Language: {user_language}]\n[User's Question]\n{user_message}"""
+        context_section = f"\n\n[Previous Conversation Context]\n{user_context}" if user_context else ""
+        
+        # 🔥 개선된 프롬프트 - 언어별 정확한 정보 우선, 일반 지식 보완
+        prompt = f"""You are a friendly and professional customer service agent for SABOO THAILAND.
 
+[COMPANY INFORMATION FOR {user_language.upper()} - THIS IS YOUR PRIMARY SOURCE OF TRUTH]
+{company_info}
+
+CRITICAL RULES - READ CAREFULLY:
+1. For company-specific questions (store locations, phone numbers, addresses, contact info), you MUST use ONLY the exact information provided in the COMPANY INFORMATION section above.
+2. The company information above is specifically for {user_language} language users - use it exactly as written, including all phone numbers, addresses, and links.
+3. NEVER use these numbers: 02-159-9880, 085-595-9565 - they are outdated and incorrect.
+4. NEVER use any phone numbers, addresses, or contact information from your training data.
+5. For general questions about soaps, skincare, and bath products, you may use your general knowledge to be helpful.
+6. Always answer in {user_language} language.
+7. Be warm and helpful like a real Thai staff member.
+8. Use light emojis 😊 for a friendly touch.
+9. If the COMPANY INFORMATION doesn't contain specific product details, give general advice and suggest contacting us using the phone number provided in the COMPANY INFORMATION above.
+
+{context_section}
+
+Customer question: {user_message}"""
+
+        logger.info(f"🌐 '{user_language}' 언어용 회사 정보를 사용하여 GPT 프롬프트 생성 완료")
+        
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": SYSTEM_MESSAGE},
+                {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=800, temperature=0.3, timeout=25
+            max_tokens=800, 
+            temperature=0.7,  # 더 자연스러운 응답을 위해 0.3 → 0.7로 증가
+            timeout=25
         )
         response_text = completion.choices[0].message.content.strip()
 
@@ -1023,6 +1256,7 @@ if __name__ == '__main__':
     logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 (500자)")
     logger.info("🧠 대화 컨텍스트: 사용자별 최근 대화 기억")
     logger.info("🎯 개선된 질문 의도 파악: 제품 검색 vs 일반 Q&A 정확히 구분")
+    logger.info("✨ 새로운 기능: 자연스러운 GPT 응답 (제한 없는 일반 상식 활용)")
     
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=not debug_mode)
