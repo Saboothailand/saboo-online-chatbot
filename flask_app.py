@@ -75,7 +75,6 @@ if not LINE_SECRET:
 if not ADMIN_API_KEY:
     logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
 
-
 # 제품 검색을 위한 키워드 매핑
 PRODUCT_KEYWORDS = {
     # Bath Bombs
@@ -198,7 +197,6 @@ Key information about SABOO THAILAND:
 Products: Natural soaps (fruit-shaped), bath products, air fresheners, essential oils, scrubs, bath sets.
 """
 
-
 # ==============================================================================
 # 5. 헬퍼 함수 정의 (Helper Functions)
 # ==============================================================================
@@ -260,10 +258,13 @@ def save_user_context(user_id: str, message: str, response: str, language: str):
         if user_id not in user_context_cache:
             user_context_cache[user_id] = []
         
+        # HTML 태그 제거 후 컨텍스트 저장
+        clean_response = re.sub(r'<[^>]+>', '', response)
+
         user_context_cache[user_id].append({
             'timestamp': datetime.now(),
             'user_message': message,
-            'bot_response': response,
+            'bot_response': clean_response, # 클린 텍스트 저장
             'language': language
         })
         
@@ -390,7 +391,7 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
         return []
 
 def get_product_info(user_query: str, language: str = 'english', detailed: bool = False) -> str:
-    """사용자 쿼리에 맞는 제품 정보 생성"""
+    """사용자 쿼리에 맞는 제품 정보를 순수 텍스트로 생성"""
     try:
         found_products = search_products_by_keywords(user_query)
         if not found_products:
@@ -419,6 +420,7 @@ def get_product_info(user_query: str, language: str = 'english', detailed: bool 
             else:
                 product_name = extract_product_name(filename)
             
+            # Markdown 스타일로 제목 강조
             response_parts.append(f"\n**{i}. {product_name}**")
             
             if len(content) > max_content_length:
@@ -496,19 +498,29 @@ def is_product_search_query(user_message: str) -> bool:
         return False
 
 def format_text_for_messenger(text: str) -> str:
-    """웹/메신저용: \n → <br> 로 변환"""
+    """웹/메신저용: \n → <br> 로 변환하고 마크다운을 HTML로 변환"""
     try:
+        # Markdown Bold/Italic to HTML
+        text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+        text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+        # Newlines to <br>
         return text.replace("\n", "<br>")
     except Exception as e:
-        logger.error(f"❌ 메신저용 줄바꿈 변환 오류: {e}")
+        logger.error(f"❌ 메신저용 포맷 변환 오류: {e}")
         return text
 
 def format_text_for_line(text: str) -> str:
-    """LINE 용: \n → \n\n 로 변환"""
+    """LINE 용: 마크다운 제거, \n → \n\n 로 변환"""
     try:
+        # Markdown 제거
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+        text = re.sub(r'\*(.*?)\*', r'\1', text)
+        # HTML 태그 제거
+        text = re.sub(r'<[^>]+>', '', text)
+        # Newlines to double newlines
         return text.replace("\n", "\n\n")
     except Exception as e:
-        logger.error(f"❌ LINE용 줄바꿈 변환 오류: {e}")
+        logger.error(f"❌ LINE용 포맷 변환 오류: {e}")
         return text
 
 def fetch_company_info(user_language: str) -> str:
@@ -602,8 +614,7 @@ def get_english_fallback_response(user_message, error_context=""):
     """문제 발생 시 영어로 된 기본 응답을 생성합니다."""
     logger.warning(f"⚠️ 폴백 응답을 활성화합니다. 원인: {error_context}")
     
-    if not client:
-        return """I apologize, but we're experiencing technical difficulties at the moment. 
+    base_info = """I apologize, but we're experiencing technical difficulties at the moment. 
 
 Here's some basic information about SABOO THAILAND:
 - We're Thailand's first natural fruit-shaped soap manufacturer since 2008
@@ -613,6 +624,9 @@ Here's some basic information about SABOO THAILAND:
 - Shopee: shopee.co.th/thailandsoap
 
 Please try again later or contact us directly. Thank you for your understanding! 😊"""
+
+    if not client:
+        return base_info
     
     try:
         prompt = f"""
@@ -628,39 +642,38 @@ Please provide a helpful response in English using basic company information."""
             max_tokens=600, temperature=0.7, timeout=20
         )
         response_text = completion.choices[0].message.content.strip()
-        response_text = add_hyperlinks(response_text)
+        
         if error_context:
             response_text += "\n\n(Note: We're currently experiencing some technical issues with our data system, but I'm happy to help with basic information about SABOO THAILAND.)"
         return response_text
     except Exception as e:
         logger.error(f"❌ 폴백 응답 생성 중에도 오류 발생: {e}")
-        return """I apologize for the technical difficulties we're experiencing.
-
-SABOO THAILAND - Basic Information:
-- Thailand's first fruit-shaped natural soap company (since 2008)
-- Store: Mixt Chatuchak, 2nd Floor, Bangkok  
-- Phone: 02-159-9880, 085-595-9565
-- Website: www.saboothailand.com
-- Shopee: shopee.co.th/thailandsoap
-- Email: saboothailand@gmail.com
-
-Products: Natural soaps, bath bombs, scrubs, essential oils, air fresheners
-Please contact us directly or try again later. Thank you! 😊"""
+        return base_info
 
 def add_hyperlinks(text: str) -> str:
-    """응답 텍스트에 포함된 전화번호와 URL을 클릭 가능한 HTML 링크로 변환합니다."""
+    """[웹 전용] 응답 텍스트에 포함된 전화번호와 URL을 클릭 가능한 HTML 링크로 변환합니다."""
     try:
+        # 전화번호 링크 변환 (한국 스타일 포함)
         text = re.sub(r'\b(0\d{1,2}-\d{3,4}-\d{4})\b', r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
         text = re.sub(r'\b(0\d{9,10})\b', r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # URL 링크 변환 (http/https)
         text = re.sub(r'(https?://[^\s<>"\']+)', r'<a href="\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
+        # URL 링크 변환 (www. 시작) - http가 없는 경우
         text = re.sub(r'\b(www\.[a-zA-Z0-9-]+\.(com|co\.th|net|org|co\.kr)[^\s<>"\']*)', r'<a href="https://\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
+        
         return text
     except Exception as e:
         logger.error(f"❌ 하이퍼링크 변환 중 오류 발생: {e}")
         return text
 
 def get_gpt_response(user_message, user_id="anonymous"):
-    """언어별 파일 데이터와 제품 검색을 통합하여 OpenAI GPT 모델로 최종 답변을 생성합니다."""
+    """
+    핵심 응답 생성 함수.
+    언어 감지, 제품 검색, GPT 호출을 통해 순수 '텍스트' 응답을 생성합니다.
+    (HTML 포맷팅은 이 함수에서 하지 않습니다.)
+    """
     user_language = detect_user_language(user_message)
     logger.info(f"🌐 감지된 사용자 언어: {user_language}")
 
@@ -683,7 +696,6 @@ def get_gpt_response(user_message, user_id="anonymous"):
                     max_tokens=1000, temperature=0.7, timeout=25
                 )
                 detailed_response = completion.choices[0].message.content.strip()
-                detailed_response = add_hyperlinks(detailed_response)
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
@@ -717,7 +729,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
             logger.warning("⚠️ 생성된 응답이 너무 짧습니다. 폴백을 사용합니다.")
             return get_english_fallback_response(user_message, "Response generation issue")
 
-        response_text = add_hyperlinks(response_text)
+        # **중요**: 여기서 하이퍼링크를 추가하지 않습니다. 순수 텍스트를 반환합니다.
         processed_response, is_truncated = process_response_length(response_text, user_language)
         save_user_context(user_id, user_message, response_text, user_language)
         
@@ -728,7 +740,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
         return get_english_fallback_response(user_message, f"GPT API error: {str(e)[:100]}")
 
 def save_chat(user_msg, bot_msg, user_id="anonymous"):
-    """대화 내용을 날짜별 텍스트 파일로 저장합니다."""
+    """대화 내용을 날짜별 텍스트 파일로 저장합니다. (HTML 태그 없이)"""
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     datestamp = now.strftime("%Y_%m_%d")
@@ -744,9 +756,12 @@ def save_chat(user_msg, bot_msg, user_id="anonymous"):
     detected_lang = detect_user_language(user_msg)
     
     try:
+        # bot_msg에서 HTML 태그를 제거하여 순수 텍스트만 저장
+        clean_bot_msg = re.sub(r'<[^>]+>', '', bot_msg)
+        
         with open(full_path, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] User ({user_id}) [{detected_lang}]: {user_msg}\n")
-            f.write(f"[{timestamp}] Bot: {bot_msg}\n")
+            f.write(f"[{timestamp}] Bot: {clean_bot_msg}\n")
             f.write("-" * 50 + "\n")
         logger.info(f"💬 채팅 로그를 '{full_path}' 파일에 저장했습니다.")
     except Exception as e:
@@ -839,7 +854,7 @@ def health():
         "cached_languages": list(language_data_cache.keys()),
         "product_files_loaded": len(product_data_cache),
         "product_last_update": product_last_update.isoformat() if product_last_update else None,
-        "user_context_cache": len(user_context_cache)
+        "user_context_cache_size": len(user_context_cache)
     })
 
 @app.route('/products')
@@ -885,15 +900,6 @@ def reload_products():
     else:
         return jsonify({"status": "error", "message": "제품 데이터 로드에 실패했습니다."}), 500
 
-@app.route('/language-status')
-def language_status():
-    """언어별 데이터 로딩 상태 확인"""
-    # ... This function can be simplified as it's for debugging
-    return jsonify({
-        "total_cached_languages": len(language_data_cache),
-        "cache_summary": {lang: len(content) for lang, content in language_data_cache.items()}
-    })
-
 @app.route('/clear-language-cache')
 def clear_language_cache():
     """언어별 캐시 및 사용자 컨텍스트 초기화"""
@@ -924,36 +930,53 @@ def reload_language_data():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """웹 챗으로부터 메시지를 받아 처리하고 응답을 반환합니다."""
+    """
+    [웹 UI 전용] 메시지를 받아 처리하고 HTML 형식의 응답을 반환합니다.
+    이곳에서 최종적으로 HTML 포맷팅이 이루어집니다.
+    """
     try:
         user_message = request.json.get('message', '').strip()
         user_id = request.json.get('user_id', 'web_user')
         if not user_message:
             return jsonify({"error": "Empty message."}), 400
 
+        # 1. 핵심 로직을 통해 '순수 텍스트' 응답을 받습니다.
         bot_response = get_gpt_response(user_message, user_id)
-        formatted_response = format_text_for_messenger(bot_response)
-        response_with_links = add_hyperlinks(formatted_response)
         
-        clean_response_for_log = re.sub(r'<[^>]+>', '', formatted_response)
-        save_chat(user_message, clean_response_for_log, user_id)
+        # 2. 순수 텍스트를 로그에 저장합니다.
+        save_chat(user_message, bot_response, user_id)
+
+        # 3. 웹 UI에 맞게 텍스트를 HTML로 포맷팅합니다.
+        #    - 줄바꿈(\n)을 <br>로 변환
+        #    - 전화번호/URL을 <a> 태그로 변환
+        formatted_html = format_text_for_messenger(bot_response)
+        response_with_links = add_hyperlinks(formatted_html)
         
         return jsonify({"reply": response_with_links, "is_html": True})
+
     except Exception as e:
         logger.error(f"❌ /chat 엔드포인트에서 오류 발생: {e}")
-        fallback_response = get_english_fallback_response("general inquiry", f"Web chat system error: {str(e)[:100]}")
-        return jsonify({"reply": format_text_for_messenger(fallback_response), "is_html": True, "error": "fallback_mode"})
+        fallback_text = get_english_fallback_response("general inquiry", f"Web chat system error: {str(e)[:100]}")
+        
+        # 폴백 응답도 동일하게 안전하게 HTML로 포맷팅합니다.
+        formatted_fallback = format_text_for_messenger(fallback_text)
+        final_fallback_html = add_hyperlinks(formatted_fallback)
+        
+        return jsonify({"reply": final_fallback_html, "is_html": True, "error": "fallback_mode"})
 
 @app.route('/line', methods=['POST'])
 def line_webhook():
-    """LINE 플랫폼으로부터 오는 웹훅 이벤트를 처리합니다."""
+    """
+    [LINE 플랫폼 전용] 웹훅 이벤트를 처리합니다.
+    이곳에서는 HTML이 아닌, LINE에 맞는 텍스트 형식으로 응답을 처리합니다.
+    """
     try:
         body = request.get_data(as_text=True)
         signature = request.headers.get('X-Line-Signature', '')
         
         if not verify_line_signature(body.encode('utf-8'), signature):
             logger.warning("⚠️ 잘못된 서명입니다.")
-            return "OK", 200 # 서명 오류 시 응답은 하되, 처리는 중단
+            return "OK", 200
 
         webhook_data = json.loads(body)
         for event in webhook_data.get("events", []):
@@ -963,7 +986,7 @@ def line_webhook():
                 user_id = event.get("source", {}).get("userId", "unknown")
                 
                 detected_language = detect_user_language(user_text)
-                logger.info(f"👤 사용자 {user_id[:8]} ({detected_language}): {user_text}")
+                logger.info(f"👤 LINE 사용자 {user_id[:8]} ({detected_language}): {user_text}")
                 
                 welcome_keywords = ["สวัสดี", "หวัดดี", "hello", "hi", "สวัสดีค่ะ", "สวัสดีครับ", "ดีจ้า", "เริ่ม", "안녕하세요", "안녕", "こんにちは", "你好", "नमस्ते"]
                 
@@ -977,13 +1000,15 @@ def line_webhook():
                     }
                     response_text = responses.get(detected_language, responses['english'])
                 else:
+                    # 1. 핵심 로직을 통해 '순수 텍스트' 응답을 받습니다.
                     response_text = get_gpt_response(user_text, user_id)
 
-                clean_response = re.sub(r'<[^>]+>', '', response_text)
-                formatted_response = format_text_for_line(clean_response)
+                # 2. LINE 플랫폼에 맞게 포맷팅합니다. (HTML 제거, 줄바꿈 처리)
+                formatted_for_line = format_text_for_line(response_text)
 
-                if send_line_message(reply_token, formatted_response):
-                    save_chat(user_text, formatted_response, user_id)
+                if send_line_message(reply_token, formatted_for_line):
+                    # 3. 포맷팅된 텍스트를 로그에 저장합니다.
+                    save_chat(user_text, formatted_for_line, user_id)
         return "OK", 200
     except Exception as e:
         logger.error(f"❌ LINE 웹훅 처리 중 심각한 오류 발생: {e}")
