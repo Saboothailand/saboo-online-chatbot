@@ -422,11 +422,14 @@ except Exception as e:
 # LINE 설정 확인
 LINE_TOKEN = os.getenv("LINE_TOKEN") or os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_SECRET = os.getenv("LINE_CHANNEL_SECRET") or os.getenv("LINE_SECRET")
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")  # 관리자 API 키 추가
 
 if not LINE_TOKEN:
     logger.error("❌ LINE_TOKEN 또는 LINE_CHANNEL_ACCESS_TOKEN을 찾을 수 없습니다!")
 if not LINE_SECRET:
     logger.error("❌ LINE_SECRET 또는 LINE_CHANNEL_SECRET을 찾을 수 없습니다!")
+if not ADMIN_API_KEY:
+    logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
 
 # 전역 변수: 언어별 캐시만 사용
 language_data_cache = {}
@@ -849,6 +852,32 @@ def send_line_message(reply_token, message):
 # Flask 라우트 (Routes)
 # ==============================================================================
 
+# ✅ 관리자 엔드포인트 보안 검사
+def check_admin_access():
+    """관리자 엔드포인트 접근 권한 확인"""
+    if not ADMIN_API_KEY:
+        return True  # API 키가 설정되지 않은 경우 접근 허용 (개발 환경)
+    
+    admin_key = request.headers.get('X-Admin-API-Key')
+    if admin_key != ADMIN_API_KEY:
+        return False
+    return True
+
+@app.before_request
+def before_request():
+    """요청 전 처리 - 관리자 엔드포인트 보안 및 초기화"""
+    # 관리자 엔드포인트 보안 검사
+    admin_endpoints = ['/reload-products', '/reload-language-data', '/clear-language-cache']
+    if request.path in admin_endpoints:
+        if not check_admin_access():
+            return jsonify({
+                "error": "Unauthorized access to admin endpoint", 
+                "message": "X-Admin-API-Key header required"
+            }), 403
+    
+    # 앱 초기화 (기존 로직)
+    initialize_once()
+
 @app.route('/')
 def index():
     """웹 챗 UI를 위한 기본 페이지를 렌더링합니다."""
@@ -863,6 +892,7 @@ def health():
         "openai_client": "connected" if client else "disconnected",
         "line_token": "configured" if LINE_TOKEN else "missing",
         "line_secret": "configured" if LINE_SECRET else "missing",
+        "admin_security": "enabled" if ADMIN_API_KEY else "disabled",
         "cached_languages": list(language_data_cache.keys()),
         "product_files_loaded": len(product_data_cache),
         "product_last_update": product_last_update.isoformat() if product_last_update else None,
@@ -1173,7 +1203,6 @@ def internal_error(error):
 # ==============================================================================
 app_initialized = False
 
-@app.before_request
 def initialize_once():
     """첫 번째 요청이 들어왔을 때 딱 한 번만 앱 초기화를 실행합니다."""
     global app_initialized
