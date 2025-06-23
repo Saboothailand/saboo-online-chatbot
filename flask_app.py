@@ -695,25 +695,57 @@ def get_gpt_response(user_message, user_id="anonymous"):
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
-        # 3. 일반적인 대화 처리
-        company_info = fetch_company_info(user_language)
-        if not company_info or len(company_info.strip()) < 50:
-            logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
-            return get_english_fallback_response(user_message, "Company data temporarily unavailable")
-        
-        user_context = get_user_context(user_id)
-        context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
-        prompt = f"""[KNOWLEDGE BASE - Language: {user_language}]\n{company_info}{context_section}\n\n(Important: If the customer's question is about shipping, products, or company information, you must find the information in the KNOWLEDGE BASE text above!)\n\n[Detected User Language: {user_language}]\n[User's Question]\n{user_message}"""
+       # 3. 일반적인 대화 처리
+company_info = fetch_company_info(user_language)
+if not company_info or len(company_info.strip()) < 50:
+    logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
+    return get_english_fallback_response(user_message, "Company data temporarily unavailable")
 
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": SYSTEM_MESSAGE},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800, temperature=0.3, timeout=25
-        )
-        response_text = completion.choices[0].message.content.strip()
+user_context = get_user_context(user_id)
+context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
+
+prompt = f"""You are a friendly and professional customer service agent for SABOO THAILAND.
+
+Here is some basic information about our company:
+{company_info}
+
+You may use your general knowledge about soaps, bath products, and skincare to answer customer questions naturally and helpfully. 
+
+Guidelines:
+- Always answer in the same language as the customer ({user_language})
+- Be warm and helpful like a real Thai staff member
+- Use light emojis 😊 for a friendly touch
+- If you don't know specific product details, it's okay to give general advice and suggest contacting us directly
+- For company-specific information (store location, contact info, etc.), refer to the company information above
+
+{context_section}
+
+Customer question: {user_message}"""
+
+NATURAL_SYSTEM_MESSAGE = f"""You are a knowledgeable and friendly customer service representative for SABOO THAILAND, a natural soap and bath product company.
+
+Key principles:
+- Always reply in {user_language}
+- Be warm, helpful, and professional
+- Use your knowledge about natural soaps, bath products, and skincare to help customers
+- When you don't know specific details, it's perfectly fine to give general helpful advice
+- Encourage customers to contact the store directly for very specific product questions
+- Use light emojis to be friendly but don't overuse them
+
+Remember: You're here to help customers have a great experience with SABOO THAILAND! 😊"""
+
+completion = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
+        {"role": "user", "content": prompt}
+    ],
+    max_tokens=800, 
+    temperature=0.7,  # 더 자연스러운 응답을 위해 0.3 → 0.7로 증가
+    timeout=25
+)
+response_text = completion.choices[0].message.content.strip()
+
 
         if not response_text or len(response_text.strip()) < 10:
             logger.warning("⚠️ 생성된 응답이 너무 짧습니다. 폴백을 사용합니다.")
