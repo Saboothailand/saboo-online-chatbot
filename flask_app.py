@@ -135,34 +135,24 @@ MORE_INFO_KEYWORDS = {
     'russian': ['подробнее', 'расскажите больше', 'больше информации', 'подробное объяснение']
 }
 
-# 시스템 메시지 정의 (개선됨)
-SYSTEM_MESSAGE = """
-You are a knowledgeable and friendly Thai staff member of SABOO THAILAND.
+# 🔥 개선된 시스템 메시지 - 자연스러운 응답 허용
+NATURAL_SYSTEM_MESSAGE = """You are a knowledgeable and friendly customer service representative for SABOO THAILAND, a natural soap and bath product company.
 
-Always reply in the **same language** the customer uses:
-- If the customer speaks Thai, answer in polite and gentle Thai using "ค่ะ" or "คะ"
-- If the customer speaks English, answer in friendly and professional English
-- If the customer speaks Korean, answer in polite Korean
-- If another language is used, try to respond in that language
+Key principles:
+- Always reply in the same language as the customer
+- Be warm, helpful, and professional like a real Thai staff member
+- Use your knowledge about natural soaps, bath products, and skincare to help customers
+- When you don't know specific details, it's perfectly fine to give general helpful advice
+- Encourage customers to contact the store directly for very specific product questions
+- Use light emojis to be friendly but don't overuse them
 
-**Core Rules:**
-1. **Your ONLY source of truth is the 'KNOWLEDGE BASE' text provided in the user's prompt.**
-2. **You are STRICTLY FORBIDDEN from using any external knowledge or making assumptions.** Do not answer based on your general training data.
-3. **If the answer to the user's question cannot be found within the 'KNOWLEDGE BASE', you MUST reply:** "죄송하지만 제가 가진 정보로는 답변드리기 어렵습니다. 직접 문의해주세요: 02-159-9880" (in Korean), or equivalent in the user's language.
-4. **Always answer in the same language as the user's question.**
-5. Read the entire 'KNOWLEDGE BASE' carefully before answering.
+Remember: You're here to help customers have a great experience with SABOO THAILAND! 😊
 
-IMPORTANT FALLBACK RULE: If there are any technical issues, errors, or problems that prevent you from accessing proper data or generating appropriate responses, ALWAYS switch to English and provide a helpful response in English, regardless of the customer's original language.
-
-Be warm and helpful like a Thai staff member who truly wants to assist the customer.
-Use light emojis 😊 to create a friendly and human touch, but do not overuse them.
-
-Important information to remember:
-- SABOO THAILAND was founded in 2008
-- First Thai company to create fruit-shaped soap
-- Exported to over 20 countries worldwide
-- Store location: Mixt Chatuchak, 2nd Floor
-- Factory: Pathum Thani
+Important company information to remember:
+- Founded in 2008
+- First Thai company to create fruit-shaped natural soap
+- Exports to over 20 countries worldwide
+- Store: Mixt Chatuchak, 2nd Floor, Bangkok
 - Phone: 02-159-9880, 085-595-9565
 - Website: www.saboothailand.com
 - Shopee: shopee.co.th/thailandsoap
@@ -656,6 +646,7 @@ def add_hyperlinks(text: str) -> str:
         logger.error(f"❌ 하이퍼링크 변환 중 오류 발생: {e}")
         return text
 
+# 🔥 핵심 개선: 자연스러운 GPT 응답 생성 함수
 def get_gpt_response(user_message, user_id="anonymous"):
     """
     핵심 응답 생성 함수.
@@ -682,11 +673,18 @@ def get_gpt_response(user_message, user_id="anonymous"):
             logger.info("📋 더 자세한 정보 요청으로 감지되었습니다.")
             user_context = get_user_context(user_id)
             if user_context:
-                prompt = f"""[Previous Conversation Context]\n{user_context}\n\n[Current Request]\nThe user is asking for more details with the phrase: "{user_message}"\n\nBased on the previous context, please provide a more detailed and specific explanation in the user's language ({user_language})."""
+                prompt = f"""[Previous Conversation Context]
+{user_context}
+
+[Current Request]
+The user is asking for more details with the phrase: "{user_message}"
+
+Based on the previous context, please provide a more detailed and specific explanation in the user's language ({user_language})."""
+                
                 completion = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
-                        {"role": "system", "content": SYSTEM_MESSAGE},
+                        {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=1000, temperature=0.7, timeout=25
@@ -695,16 +693,17 @@ def get_gpt_response(user_message, user_id="anonymous"):
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
-       # 3. 일반적인 대화 처리
-company_info = fetch_company_info(user_language)
-if not company_info or len(company_info.strip()) < 50:
-    logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
-    return get_english_fallback_response(user_message, "Company data temporarily unavailable")
-
-user_context = get_user_context(user_id)
-context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
-
-prompt = f"""You are a friendly and professional customer service agent for SABOO THAILAND.
+        # 🔥 3. 일반적인 대화 처리 - 자연스럽게 개선됨
+        company_info = fetch_company_info(user_language)
+        if not company_info or len(company_info.strip()) < 50:
+            logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
+            return get_english_fallback_response(user_message, "Company data temporarily unavailable")
+        
+        user_context = get_user_context(user_id)
+        context_section = f"\n\n[Previous Conversation Context]\n{user_context}" if user_context else ""
+        
+        # 🔥 개선된 프롬프트 - 제한적이지 않고 자연스럽게
+        prompt = f"""You are a friendly and professional customer service agent for SABOO THAILAND.
 
 Here is some basic information about our company:
 {company_info}
@@ -722,30 +721,17 @@ Guidelines:
 
 Customer question: {user_message}"""
 
-NATURAL_SYSTEM_MESSAGE = f"""You are a knowledgeable and friendly customer service representative for SABOO THAILAND, a natural soap and bath product company.
-
-Key principles:
-- Always reply in {user_language}
-- Be warm, helpful, and professional
-- Use your knowledge about natural soaps, bath products, and skincare to help customers
-- When you don't know specific details, it's perfectly fine to give general helpful advice
-- Encourage customers to contact the store directly for very specific product questions
-- Use light emojis to be friendly but don't overuse them
-
-Remember: You're here to help customers have a great experience with SABOO THAILAND! 😊"""
-
-completion = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[
-        {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
-        {"role": "user", "content": prompt}
-    ],
-    max_tokens=800, 
-    temperature=0.7,  # 더 자연스러운 응답을 위해 0.3 → 0.7로 증가
-    timeout=25
-)
-response_text = completion.choices[0].message.content.strip()
-
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": NATURAL_SYSTEM_MESSAGE},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800, 
+            temperature=0.7,  # 더 자연스러운 응답을 위해 0.3 → 0.7로 증가
+            timeout=25
+        )
+        response_text = completion.choices[0].message.content.strip()
 
         if not response_text or len(response_text.strip()) < 10:
             logger.warning("⚠️ 생성된 응답이 너무 짧습니다. 폴백을 사용합니다.")
@@ -1055,6 +1041,7 @@ if __name__ == '__main__':
     logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 (500자)")
     logger.info("🧠 대화 컨텍스트: 사용자별 최근 대화 기억")
     logger.info("🎯 개선된 질문 의도 파악: 제품 검색 vs 일반 Q&A 정확히 구분")
+    logger.info("✨ 새로운 기능: 자연스러운 GPT 응답 (제한 없는 일반 상식 활용)")
     
     try:
         app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=not debug_mode)
