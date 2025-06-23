@@ -75,6 +75,7 @@ if not LINE_SECRET:
 if not ADMIN_API_KEY:
     logger.warning("⚠️ ADMIN_API_KEY가 설정되지 않았습니다. 관리자 엔드포인트가 보호되지 않습니다.")
 
+
 # 제품 검색을 위한 키워드 매핑
 PRODUCT_KEYWORDS = {
     # Bath Bombs
@@ -88,9 +89,9 @@ PRODUCT_KEYWORDS = {
     'natural': ['natural', '천연', 'ธรรมชาติ'],
     'handmade': ['handmade', '수제', 'ทำมือ'],
     
-    # Shapes
-    'fruit': ['fruit', '과일', 'ผลไม้'],
-    'flower': ['flower', '꽃', 'ดอกไม้'],
+    # Shapes & Ingredients (망고 추가)
+    'fruit': ['fruit', '과일', 'ผลไม้', 'mango', '망고', 'มะม่วง'],
+    'flower': ['flower', '꽃', 'ดอกไม้', 'jasmine', 'lavender', 'orchid'],
     'animal': ['animal', '동물', 'สัตว์'],
     'dinosaur': ['dinosaur', '공룡', 'ไดโนเสาร์'],
     'elephant': ['elephant', '코끼리', 'ช้าง'],
@@ -124,19 +125,8 @@ PRODUCT_KEYWORDS = {
     '25ml': ['25ml', '25 ml']
 }
 
-# 언어별 "더 자세한 정보" 안내 메시지
-MORE_INFO_MESSAGES = {
-    'thai': "💬 หากต้องการข้อมูลเพิ่มเติมหรือรายละเอียดมากขึ้น กรุณาพิมพ์ 'รายละเอียดเพิ่มเติม' หรือ 'ข้อมูลเพิ่มเติม' ค่ะ",
-    'korean': "💬 더 자세한 정보나 추가 설명이 필요하시면 '자세한 설명' 또는 '더 알려주세요'라고 말씀해 주세요",
-    'japanese': "💬 詳細情報や追加説明が必要でしたら「詳しく教えて」または「もっと詳しく」とお聞かせください",
-    'chinese': "💬 如需更详细信息或更多说明，请输入「详细说明」或「更多信息」",
-    'english': "💬 For more detailed information or additional explanation, please type 'more details' or 'tell me more'",
-    'spanish': "💬 Para obtener información más detallada o explicación adicional, escriba 'más detalles' o 'cuéntame más'",
-    'german': "💬 Für detailliertere Informationen oder zusätzliche Erklärungen, tippen Sie 'mehr Details' oder 'erzählen Sie mir mehr'",
-    'french': "💬 Pour plus d'informations détaillées ou d'explications supplémentaires, tapez 'plus de détails' ou 'dites-moi plus'",
-    'vietnamese': "💬 Để biết thêm thông tin chi tiết hoặc giải thích bổ sung, vui lòng nhập 'chi tiết hơn' hoặc 'cho tôi biết thêm'",
-    'russian': "💬 Для получения более подробной информации или дополнительных объяснений, напишите 'подробнее' или 'расскажите больше'"
-}
+# (삭제됨) "더 자세한 정보" 안내 메시지는 더 이상 사용되지 않습니다.
+# MORE_INFO_MESSAGES = { ... }
 
 # "더 자세한 정보" 요청 키워드 감지
 MORE_INFO_KEYWORDS = {
@@ -197,43 +187,37 @@ Key information about SABOO THAILAND:
 Products: Natural soaps (fruit-shaped), bath products, air fresheners, essential oils, scrubs, bath sets.
 """
 
+
 # ==============================================================================
 # 5. 헬퍼 함수 정의 (Helper Functions)
 # ==============================================================================
 
-def process_response_length(text: str, language: str, max_length: int = 400) -> tuple:
-    """응답 텍스트의 길이를 체크하고 필요시 축약하여 반환"""
+def process_response_length(text: str, language: str, max_length: int = 500) -> tuple:
+    """
+    [수정됨] 응답 텍스트 길이를 500자로 체크하고, 초과 시 '...'로 축약합니다.
+    (추가 안내 문구는 제거되었습니다.)
+    """
     try:
         clean_text = re.sub(r'<[^>]+>', '', text)
         if len(clean_text) <= max_length:
             return text, False
         
-        sentences = re.split(r'[.!?。！？]\s*', text)
-        truncated_text = ""
+        # 텍스트가 너무 길면 자르기
+        truncated_text = clean_text[:max_length]
         
-        for sentence in sentences:
-            if len(re.sub(r'<[^>]+>', '', truncated_text + sentence)) > max_length:
-                break
-            truncated_text += sentence + ". " if not sentence.endswith(('.', '!', '?', '。', '！', '？')) else sentence + " "
+        # 마지막 단어가 잘리지 않도록 공백에서 자르기
+        last_space = truncated_text.rfind(' ')
+        if last_space > 0:
+            truncated_text = truncated_text[:last_space]
+
+        # 항상 '...' 추가
+        truncated_text = truncated_text.strip() + "..."
         
-        if len(re.sub(r'<[^>]+>', '', truncated_text.strip())) < 50:
-            clean_original = re.sub(r'<[^>]+>', '', text)
-            truncated_text = clean_original[:max_length]
-            last_space = truncated_text.rfind(' ')
-            if last_space > max_length * 0.8:
-                truncated_text = truncated_text[:last_space]
-        
-        truncated_text = truncated_text.strip()
-        if not truncated_text.endswith('...'):
-            truncated_text += "..."
-        
-        more_info_msg = MORE_INFO_MESSAGES.get(language, MORE_INFO_MESSAGES['english'])
-        final_text = f"{truncated_text}\n\n{more_info_msg}"
-        
-        return final_text, True
+        return truncated_text, True
     except Exception as e:
         logger.error(f"❌ 응답 길이 처리 중 오류: {e}")
         return text, False
+
 
 def is_more_info_request(user_message: str, detected_language: str) -> bool:
     """사용자가 더 자세한 정보를 요청하는지 확인"""
@@ -258,13 +242,12 @@ def save_user_context(user_id: str, message: str, response: str, language: str):
         if user_id not in user_context_cache:
             user_context_cache[user_id] = []
         
-        # HTML 태그 제거 후 컨텍스트 저장
         clean_response = re.sub(r'<[^>]+>', '', response)
 
         user_context_cache[user_id].append({
             'timestamp': datetime.now(),
             'user_message': message,
-            'bot_response': clean_response, # 클린 텍스트 저장
+            'bot_response': clean_response,
             'language': language
         })
         
@@ -320,7 +303,7 @@ def load_product_files():
         return False
 
 def search_products_by_keywords(user_query: str) -> List[Dict]:
-    """사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기"""
+    """[개선됨] 사용자 쿼리에서 키워드를 추출하여 관련 제품 찾기 (정확도 향상)"""
     try:
         user_query_lower = user_query.lower()
         found_products = []
@@ -343,35 +326,38 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
         
         logger.info(f"🎯 쿼리 의도 분석: 가격={is_price_query}, 목록={is_list_query}")
         
+        query_words = set(re.findall(r'\b\w+\b', user_query_lower))
+
         for filename, content in product_data_cache.items():
             relevance_score = 0
             matched_keywords = []
-            
+            filename_lower = filename.lower()
+
+            # 의도에 맞지 않는 파일 타입은 건너뛰기
             if is_price_query and not filename.endswith('_price.txt'):
                 continue
             elif is_list_query and not filename.endswith('_list.txt'):
                 continue
-            
-            filename_lower = filename.lower()
-            
+
+            # 점수 계산 로직 개선
             for category, keywords in PRODUCT_KEYWORDS.items():
-                if category == 'price':
-                    continue
+                if category == 'price': continue # 가격 키워드는 의도 파악에만 사용
+
                 for keyword in keywords:
-                    if keyword.lower() in user_query_lower:
-                        if category in filename_lower or any(k in filename_lower for k in keywords):
-                            relevance_score += 2
+                    if keyword.lower() in query_words:
+                        # **핵심 개선**: 구체적인 키워드(예: 망고)가 파일명에 있으면 매우 높은 점수 부여
+                        if keyword.lower() in filename_lower:
+                            # 'soap', '비누' 같은 일반적인 단어보다 구체적인 단어에 더 높은 가중치
+                            if category not in ['soap', 'fancy']:
+                                relevance_score += 10  # 구체적인 키워드 매치 (예: mango)
+                            else:
+                                relevance_score += 3   # 일반적인 키워드 매치 (예: soap)
                             matched_keywords.append(keyword)
-                    if keyword.lower() in filename_lower and keyword.lower() in user_query_lower:
-                        relevance_score += 3
-            
-            query_words = [word for word in user_query_lower.split() if word not in price_intent_keywords + list_intent_keywords]
-            
-            for word in query_words:
-                if len(word) > 1 and word in filename_lower:
-                    relevance_score += 1
-                    matched_keywords.append(word)
-            
+                        # 파일명에는 없지만, 카테고리가 일치하는 경우 (예: '과일 비누' 검색 시)
+                        elif category in filename_lower:
+                            relevance_score += 1
+                            matched_keywords.append(keyword)
+
             if relevance_score > 0:
                 found_products.append({
                     'filename': filename,
@@ -383,9 +369,12 @@ def search_products_by_keywords(user_query: str) -> List[Dict]:
         
         found_products.sort(key=lambda x: x['relevance_score'], reverse=True)
         
+        if found_products:
+            logger.info(f"🏆 최고 점수 파일: {found_products[0]['filename']} (점수: {found_products[0]['relevance_score']})")
+        
         file_type = 'price' if is_price_query else 'list'
         logger.info(f"🔍 '{user_query}'에 대해 {len(found_products)}개의 {file_type} 파일을 찾았습니다.")
-        return found_products[:10]
+        return found_products[:5] # 상위 5개만 반환
     except Exception as e:
         logger.error(f"❌ 제품 검색 중 오류: {e}")
         return []
@@ -397,36 +386,30 @@ def get_product_info(user_query: str, language: str = 'english', detailed: bool 
         if not found_products:
             return get_no_products_message(language)
         
+        # 가장 관련성 높은 제품 1개의 정보만 반환하여 혼동을 줄임
+        top_product = found_products[0]
+        
         response_parts = []
-        file_type = found_products[0].get('file_type', 'list')
+        file_type = top_product.get('file_type', 'list')
         
         headers = {
-            'price': {'thai': "💰 ราคาสินค้า:", 'korean': "💰 제품 가격:", 'japanese': "💰 商品価格:", 'chinese': "💰 产品价格:", 'english': "💰 Product Prices:"},
-            'list': {'thai': "🛍️ รายการสินค้า:", 'korean': "🛍️ 제품 목록:", 'japanese': "🛍️ 商品一覧:", 'chinese': "🛍️ 产品列表:", 'english': "🛍️ Product List:"}
+            'price': {'thai': "💰 ราคาสินค้าที่ท่าน 찾으시는 것 같아요:", 'korean': "💰 찾으시는 제품의 가격 정보입니다:", 'japanese': "💰 お探しの商品の価格情報:", 'chinese': "💰 您查找的产品价格信息:", 'english': "💰 Here is the price information for the product you're looking for:"},
+            'list': {'thai': "🛍️ รายการสินค้าที่ท่าน 찾으시는 것 같아요:", 'korean': "🛍️ 찾으시는 제품 목록입니다:", 'japanese': "🛍️ お探しの商品一覧:", 'chinese': "🛍️ 您查找的产品列表:", 'english': "🛍️ Here is the product list you're looking for:"}
         }
         response_parts.append(headers[file_type].get(language, headers[file_type]['english']))
         
-        max_products = 10 if detailed else 5
-        max_content_length = 800 if detailed else 400
+        filename = top_product['filename']
+        content = top_product['content']
         
-        for i, product in enumerate(found_products[:max_products], 1):
-            filename = product['filename']
-            content = product['content']
-            
-            if filename.endswith('_list.txt'):
-                product_name = extract_product_name(filename.replace('_list.txt', ''))
-            elif filename.endswith('_price.txt'):
-                product_name = extract_product_name(filename.replace('_price.txt', ''))
-            else:
-                product_name = extract_product_name(filename)
-            
-            # Markdown 스타일로 제목 강조
-            response_parts.append(f"\n**{i}. {product_name}**")
-            
-            if len(content) > max_content_length:
-                content = content[:max_content_length] + "..."
-            
-            response_parts.append(f"{content}\n")
+        if filename.endswith('_list.txt'):
+            product_name = extract_product_name(filename.replace('_list.txt', ''))
+        elif filename.endswith('_price.txt'):
+            product_name = extract_product_name(filename.replace('_price.txt', ''))
+        else:
+            product_name = extract_product_name(filename)
+        
+        response_parts.append(f"\n**{product_name}**")
+        response_parts.append(f"{content}\n")
         
         contact_info = {
             'thai': "\n📞 สำหรับข้อมูลเพิ่มเติม โทร: 02-159-9880, 085-595-9565",
@@ -453,11 +436,11 @@ def extract_product_name(filename: str) -> str:
 def get_no_products_message(language: str) -> str:
     """제품을 찾지 못했을 때의 메시지"""
     messages = {
-        'thai': "❌ ขออภัยค่ะ ไม่พบผลิตภัณฑ์ที่ตรงกับคำค้นหาของคุณ\n\n🔍 ลองค้นหาด้วยคำอื่น เช่น: สบู่, บาธบอม, สครับ, น้ำหอม\n📞 หรือติดต่อเราโดยตรง: 02-159-9880",
-        'korean': "❌ 죄송합니다. 검색어와 일치하는 제품을 찾을 수 없습니다.\n\n🔍 다른 키워드로 시도해보세요: 비누, 배스봄, 스크럽, 향수\n📞 또는 직접 문의: 02-159-9880",
-        'japanese': "❌ 申し訳ございません。検索条件に一致する商品が見つかりませんでした。\n\n🔍 他のキーワードでお試しください: 石鹸、バスボム、スクラブ、香水\n📞 またはお電話で: 02-159-9880",
-        'chinese': "❌ 抱歉，没有找到符合搜索条件的产品。\n\n🔍 请尝试其他关键词: 香皂、沐浴球、磨砂膏、香水\n📞 或直接联系: 02-159-9880",
-        'english': "❌ Sorry, no products found matching your search.\n\n🔍 Try other keywords like: soap, bath bomb, scrub, perfume\n📞 Or contact us directly: 02-159-9880"
+        'thai': "❌ ขออภัยค่ะ ไม่พบผลิตภัณฑ์ที่ตรงกับคำค้นหาของคุณ\n\n🔍 ลองค้นหาด้วยคำอื่น เช่น: สบู่มะม่วง, บาธบอม, สครับ\n📞 หรือติดต่อเราโดยตรง: 02-159-9880",
+        'korean': "❌ 죄송합니다. 검색어와 일치하는 제품을 찾을 수 없습니다.\n\n🔍 다른 키워드로 시도해보세요: 망고 비누, 배스봄, 스크럽\n📞 또는 직접 문의: 02-159-9880",
+        'japanese': "❌ 申し訳ございません。検索条件に一致する商品が見つかりませんでした。\n\n🔍 他のキーワードでお試しください: マンゴー石鹸、バスボム、スクラブ\n📞 またはお電話で: 02-159-9880",
+        'chinese': "❌ 抱歉，没有找到符合搜索条件的产品。\n\n🔍 请尝试其他关键词: 芒果香皂、沐浴球、磨砂膏\n📞 或直接联系: 02-159-9880",
+        'english': "❌ Sorry, no products found matching your search.\n\n🔍 Try other keywords like: mango soap, bath bomb, scrub\n📞 Or contact us directly: 02-159-9880"
     }
     return messages.get(language, messages['english'])
 
@@ -496,6 +479,10 @@ def is_product_search_query(user_message: str) -> bool:
     except Exception as e:
         logger.error(f"❌ 제품 검색 쿼리 판단 중 오류: {e}")
         return False
+
+# ... 이하 나머지 코드는 이전과 동일합니다 ...
+# The rest of the code (format_text_for_messenger, format_text_for_line, fetch_company_info, etc.)
+# remains the same as the previously corrected version. I will append it here.
 
 def format_text_for_messenger(text: str) -> str:
     """웹/메신저용: \n → <br> 로 변환하고 마크다운을 HTML로 변환"""
@@ -672,7 +659,6 @@ def get_gpt_response(user_message, user_id="anonymous"):
     """
     핵심 응답 생성 함수.
     언어 감지, 제품 검색, GPT 호출을 통해 순수 '텍스트' 응답을 생성합니다.
-    (HTML 포맷팅은 이 함수에서 하지 않습니다.)
     """
     user_language = detect_user_language(user_message)
     logger.info(f"🌐 감지된 사용자 언어: {user_language}")
@@ -682,11 +668,20 @@ def get_gpt_response(user_message, user_id="anonymous"):
             logger.error("❌ OpenAI client가 없습니다.")
             return get_english_fallback_response(user_message, "OpenAI service unavailable")
 
+        # 1. 제품 검색 쿼리인지 먼저 확인
+        if is_product_search_query(user_message):
+            logger.info("🔍 제품 검색 쿼리로 감지되었습니다.")
+            product_info = get_product_info(user_message, user_language)
+            # 제품 정보는 길이 제한 없이 그대로 반환
+            save_user_context(user_id, user_message, product_info, user_language)
+            return product_info
+
+        # 2. '더 자세한 정보' 요청 처리
         if is_more_info_request(user_message, user_language):
             logger.info("📋 더 자세한 정보 요청으로 감지되었습니다.")
             user_context = get_user_context(user_id)
             if user_context:
-                prompt = f"""[이전 대화 컨텍스트]\n{user_context}\n\n[현재 요청]\n사용자가 더 자세한 정보를 요청했습니다: {user_message}\n\n이전 대화의 내용을 바탕으로 더 자세하고 구체적인 설명을 {user_language} 언어로 제공해주세요."""
+                prompt = f"""[Previous Conversation Context]\n{user_context}\n\n[Current Request]\nThe user is asking for more details with the phrase: "{user_message}"\n\nBased on the previous context, please provide a more detailed and specific explanation in the user's language ({user_language})."""
                 completion = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
@@ -699,13 +694,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
                 save_user_context(user_id, user_message, detailed_response, user_language)
                 return detailed_response
 
-        if is_product_search_query(user_message):
-            logger.info("🔍 제품 검색 쿼리로 감지되었습니다.")
-            product_info = get_product_info(user_message, user_language)
-            processed_response, _ = process_response_length(product_info, user_language)
-            save_user_context(user_id, user_message, product_info, user_language)
-            return processed_response
-
+        # 3. 일반적인 대화 처리
         company_info = fetch_company_info(user_language)
         if not company_info or len(company_info.strip()) < 50:
             logger.warning("⚠️ 회사 정보가 불충분합니다. 폴백을 사용합니다.")
@@ -713,7 +702,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
         
         user_context = get_user_context(user_id)
         context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
-        prompt = f"""[회사 정보 - 언어: {user_language}]\n{company_info}{context_section}\n\n(중요: 고객 질문이 배송/운송, 제품, 회사 정보와 관련된 경우 반드시 위 회사 정보 텍스트에서 정보를 찾을 것!)\n\n[감지된 사용자 언어: {user_language}]\n[사용자 질문]\n{user_message}"""
+        prompt = f"""[Company Info - Language: {user_language}]\n{company_info}{context_section}\n\n(Important: If the customer's question is about shipping, products, or company information, you must find the information in the company info text above!)\n\n[Detected User Language: {user_language}]\n[User's Question]\n{user_message}"""
 
         completion = client.chat.completions.create(
             model="gpt-4o",
@@ -729,7 +718,6 @@ def get_gpt_response(user_message, user_id="anonymous"):
             logger.warning("⚠️ 생성된 응답이 너무 짧습니다. 폴백을 사용합니다.")
             return get_english_fallback_response(user_message, "Response generation issue")
 
-        # **중요**: 여기서 하이퍼링크를 추가하지 않습니다. 순수 텍스트를 반환합니다.
         processed_response, is_truncated = process_response_length(response_text, user_language)
         save_user_context(user_id, user_message, response_text, user_language)
         
@@ -756,7 +744,6 @@ def save_chat(user_msg, bot_msg, user_id="anonymous"):
     detected_lang = detect_user_language(user_msg)
     
     try:
-        # bot_msg에서 HTML 태그를 제거하여 순수 텍스트만 저장
         clean_bot_msg = re.sub(r'<[^>]+>', '', bot_msg)
         
         with open(full_path, "a", encoding="utf-8") as f:
@@ -866,7 +853,6 @@ def products_status():
         "last_update": product_last_update.isoformat() if product_last_update else None,
         "price_list_folder_exists": os.path.exists("price_list"),
         "sample_keywords": dict(list(PRODUCT_KEYWORDS.items())[:5]),
-        "more_info_messages_count": len(MORE_INFO_MESSAGES),
         "more_info_keywords_count": {lang: len(keywords) for lang, keywords in MORE_INFO_KEYWORDS.items()}
     })
 
@@ -882,7 +868,7 @@ def search_products_endpoint():
         "found_count": len(found_products),
         "products": []
     }
-    for product in found_products[:10]:
+    for product in found_products:
         result["products"].append({
             "filename": product['filename'],
             "product_name": extract_product_name(product['filename']),
@@ -891,6 +877,7 @@ def search_products_endpoint():
             "content_preview": product['content'][:200] + "..."
         })
     return jsonify(result)
+
 
 @app.route('/reload-products')
 def reload_products():
@@ -932,7 +919,6 @@ def reload_language_data():
 def chat():
     """
     [웹 UI 전용] 메시지를 받아 처리하고 HTML 형식의 응답을 반환합니다.
-    이곳에서 최종적으로 HTML 포맷팅이 이루어집니다.
     """
     try:
         user_message = request.json.get('message', '').strip()
@@ -940,15 +926,10 @@ def chat():
         if not user_message:
             return jsonify({"error": "Empty message."}), 400
 
-        # 1. 핵심 로직을 통해 '순수 텍스트' 응답을 받습니다.
         bot_response = get_gpt_response(user_message, user_id)
         
-        # 2. 순수 텍스트를 로그에 저장합니다.
         save_chat(user_message, bot_response, user_id)
 
-        # 3. 웹 UI에 맞게 텍스트를 HTML로 포맷팅합니다.
-        #    - 줄바꿈(\n)을 <br>로 변환
-        #    - 전화번호/URL을 <a> 태그로 변환
         formatted_html = format_text_for_messenger(bot_response)
         response_with_links = add_hyperlinks(formatted_html)
         
@@ -958,7 +939,6 @@ def chat():
         logger.error(f"❌ /chat 엔드포인트에서 오류 발생: {e}")
         fallback_text = get_english_fallback_response("general inquiry", f"Web chat system error: {str(e)[:100]}")
         
-        # 폴백 응답도 동일하게 안전하게 HTML로 포맷팅합니다.
         formatted_fallback = format_text_for_messenger(fallback_text)
         final_fallback_html = add_hyperlinks(formatted_fallback)
         
@@ -968,7 +948,6 @@ def chat():
 def line_webhook():
     """
     [LINE 플랫폼 전용] 웹훅 이벤트를 처리합니다.
-    이곳에서는 HTML이 아닌, LINE에 맞는 텍스트 형식으로 응답을 처리합니다.
     """
     try:
         body = request.get_data(as_text=True)
@@ -1000,14 +979,11 @@ def line_webhook():
                     }
                     response_text = responses.get(detected_language, responses['english'])
                 else:
-                    # 1. 핵심 로직을 통해 '순수 텍스트' 응답을 받습니다.
                     response_text = get_gpt_response(user_text, user_id)
 
-                # 2. LINE 플랫폼에 맞게 포맷팅합니다. (HTML 제거, 줄바꿈 처리)
                 formatted_for_line = format_text_for_line(response_text)
 
                 if send_line_message(reply_token, formatted_for_line):
-                    # 3. 포맷팅된 텍스트를 로그에 저장합니다.
                     save_chat(user_text, formatted_for_line, user_id)
         return "OK", 200
     except Exception as e:
@@ -1039,7 +1015,7 @@ if __name__ == '__main__':
     
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
     logger.info("📂 데이터 소스: company_info 폴더 + price_list 폴더 개별 파일 검색")
-    logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 + '더 자세한 정보' 안내")
+    logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 (500자, 추가 안내 없음)")
     logger.info("🧠 대화 컨텍스트: 사용자별 최근 대화 기억")
     
     try:
