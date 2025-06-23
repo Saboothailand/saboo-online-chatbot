@@ -7,6 +7,11 @@ def get_no_products_message(language: str) -> str:
         'chinese': "❌ 抱歉，没有找到符合搜索条件的产品。\n\n🔍 请尝试其他关键词: 香皂、沐浴球、磨砂膏、香水\n📞 或直接联系: 02-159-9880",
         'english': "❌ Sorry, no products found matching your search.\n\n🔍 Try other keywords like: soap, bath bomb, scrub, perfume\n📞 Or contact us directly: 02-159-9880"
     }
+    return messages.get(language, messages['english']) 배스봄, 스크럽, 향수\n📞 또는 직접 문의: 02-159-9880",
+        'japanese': "❌ 申し訳ございません。検索条件に一致する商品が見つかりませんでした。\n\n🔍 他のキーワードでお試しください: 石鹸、バスボム、スクラブ、香水\n📞 またはお電話で: 02-159-9880",
+        'chinese': "❌ 抱歉，没有找到符合搜索条件的产品。\n\n🔍 请尝试其他关键词: 香皂、沐浴球、磨砂膏、香水\n📞 或直接联系: 02-159-9880",
+        'english': "❌ Sorry, no products found matching your search.\n\n🔍 Try other keywords like: soap, bath bomb, scrub, perfume\n📞 Or contact us directly: 02-159-9880"
+    }
     return messages.get(language, messages['english'])
 
 def get_error_message(language: str) -> str:
@@ -52,18 +57,18 @@ def is_product_search_query(user_message: str) -> bool:
         return False
 
 def format_text_for_messenger(text):
-    """웹/메신저용: \\n → <br> 로 변환"""
+    """웹/메신저용: \n → <br> 로 변환"""
     try:
-        text = text.replace("\\n", "<br>")
+        text = text.replace("\n", "<br>")
         return text
     except Exception as e:
         logger.error(f"❌ 메신저용 줄바꿈 변환 오류: {e}")
         return text
 
 def format_text_for_line(text):
-    """LINE 용: \\n → \\n\\n 로 변환"""
+    """LINE 용: \n → \n\n 로 변환"""
     try:
-        text = text.replace("\\n", "\\n\\n")
+        text = text.replace("\n", "\n\n")
         return text
     except Exception as e:
         logger.error(f"❌ LINE용 줄바꿈 변환 오류: {e}")
@@ -155,20 +160,20 @@ def initialize_data():
 def detect_user_language(message):
     """사용자 메시지에서 언어를 감지합니다."""
     try:
-        if re.search(r'[\\u0e00-\\u0e7f]+', message):
+        if re.search(r'[\u0e00-\u0e7f]+', message):
             return 'thai'
-        elif re.search(r'[\\uac00-\\ud7af]+', message):
+        elif re.search(r'[\uac00-\ud7af]+', message):
             return 'korean'
-        elif re.search(r'[\\u3040-\\u309f\\u30a0-\\u30ff]+', message):
+        elif re.search(r'[\u3040-\u309f\u30a0-\u30ff]+', message):
             return 'japanese'
-        elif re.search(r'[\\u4e00-\\u9fff]+', message):
-            if re.search(r'[\\u3040-\\u309f\\u30a0-\\u30ff]', message):
+        elif re.search(r'[\u4e00-\u9fff]+', message):
+            if re.search(r'[\u3040-\u309f\u30a0-\u30ff]', message):
                 return 'japanese'
             else:
                 return 'chinese'
-        elif re.search(r'[\\u0600-\\u06ff]+', message):
+        elif re.search(r'[\u0600-\u06ff]+', message):
             return 'arabic'
-        elif re.search(r'[\\u0401\\u0451\\u0410-\\u044f]+', message):
+        elif re.search(r'[\u0401\u0451\u0410-\u044f]+', message):
             return 'russian'
         elif re.search(r'[àâäéèêëïîôùûüÿç]+', message.lower()):
             return 'french'
@@ -223,7 +228,7 @@ Please provide a helpful response in English using basic company information.
         response_text = add_hyperlinks(response_text)
         
         if error_context:
-            response_text += f"\\n\\n(Note: We're currently experiencing some technical issues with our data system, but I'm happy to help with basic information about SABOO THAILAND.)"
+            response_text += f"\n\n(Note: We're currently experiencing some technical issues with our data system, but I'm happy to help with basic information about SABOO THAILAND.)"
         
         return response_text
     except Exception as e:
@@ -246,20 +251,20 @@ def add_hyperlinks(text):
     """응답 텍스트에 포함된 전화번호와 URL을 클릭 가능한 HTML 링크로 변환합니다."""
     try:
         # 1. 전화번호 패턴 처리 (한국, 태국 형식)
-        phone_pattern = r'\\b(0\\d{1,2}-\\d{3,4}-\\d{4})\\b'
-        text = re.sub(phone_pattern, r'<a href="tel:\\1" style="color: #ff69b4; text-decoration: underline;">\\1</a>', text)
+        phone_pattern = r'\b(0\d{1,2}-\d{3,4}-\d{4})\b'
+        text = re.sub(phone_pattern, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
         
         # 2. 슬래시 없는 전화번호도 처리
-        phone_pattern2 = r'\\b(0\\d{9,10})\\b'
-        text = re.sub(phone_pattern2, r'<a href="tel:\\1" style="color: #ff69b4; text-decoration: underline;">\\1</a>', text)
+        phone_pattern2 = r'\b(0\d{9,10})\b'
+        text = re.sub(phone_pattern2, r'<a href="tel:\1" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
         
         # 3. URL 패턴 처리
-        url_pattern = r'(https?://[^\\s<>"\']+)'
-        text = re.sub(url_pattern, r'<a href="\\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\\1</a>', text)
+        url_pattern = r'(https?://[^\s<>"\']+)'
+        text = re.sub(url_pattern, r'<a href="\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
         
         # 4. www로 시작하는 도메인 처리
-        www_pattern = r'\\b(www\\.[a-zA-Z0-9-]+\\.(com|co\\.th|net|org|co\\.kr)[^\\s<>"\']*)'
-        text = re.sub(www_pattern, r'<a href="https://\\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\\1</a>', text)
+        www_pattern = r'\b(www\.[a-zA-Z0-9-]+\.(com|co\.th|net|org|co\.kr)[^\s<>"\']*)'
+        text = re.sub(www_pattern, r'<a href="https://\1" target="_blank" style="color: #ff69b4; text-decoration: underline;">\1</a>', text)
         
         return text
     except Exception as e:
@@ -333,7 +338,7 @@ def get_gpt_response(user_message, user_id="anonymous"):
         
         # 4. 사용자 컨텍스트 가져오기
         user_context = get_user_context(user_id)
-        context_section = f"\\n\\n[이전 대화 컨텍스트]\\n{user_context}" if user_context else ""
+        context_section = f"\n\n[이전 대화 컨텍스트]\n{user_context}" if user_context else ""
         
         # 5. GPT 프롬프트 생성
         prompt = f"""
@@ -402,9 +407,9 @@ def save_chat(user_msg, bot_msg, user_id="anonymous"):
     
     try:
         with open(full_path, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] User ({user_id}) [{detected_lang}]: {user_msg}\\n")
-            f.write(f"[{timestamp}] Bot: {bot_msg}\\n")
-            f.write("-" * 50 + "\\n")
+            f.write(f"[{timestamp}] User ({user_id}) [{detected_lang}]: {user_msg}\n")
+            f.write(f"[{timestamp}] Bot: {bot_msg}\n")
+            f.write("-" * 50 + "\n")
         logger.info(f"💬 채팅 로그를 '{full_path}' 파일에 저장했습니다.")
     except Exception as e:
         logger.error(f"❌ 로그 파일 '{full_path}' 저장 실패: {e}")
@@ -830,15 +835,15 @@ def line_webhook():
                 
                 if user_text.lower() in [k.lower() for k in welcome_keywords]:
                     if detected_language == 'thai':
-                        response_text = "สวัสดีค่ะ! 💕 ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ\\n\\nมีอะไรให้ดิฉันช่วยเหลือคะ? 😊"
+                        response_text = "สวัสดีค่ะ! 💕 ยินดีต้อนรับสู่ SABOO THAILAND ค่ะ\n\nมีอะไรให้ดิฉันช่วยเหลือคะ? 😊"
                     elif detected_language == 'korean':
-                        response_text = "안녕하세요! 💕 SABOO THAILAND에 오신 것을 환영합니다!\\n\\n무엇을 도와드릴까요? 😊"
+                        response_text = "안녕하세요! 💕 SABOO THAILAND에 오신 것을 환영합니다!\n\n무엇을 도와드릴까요? 😊"
                     elif detected_language == 'japanese':
-                        response_text = "こんにちは！💕 SABOO THAILANDへようこそ！\\n\\n何かお手伝いできることはありますか？😊"
+                        response_text = "こんにちは！💕 SABOO THAILANDへようこそ！\n\n何かお手伝いできることはありますか？😊"
                     elif detected_language == 'chinese':
-                        response_text = "您好！💕 欢迎来到 SABOO THAILAND！\\n\\n有什么可以帮您的吗？😊"
+                        response_text = "您好！💕 欢迎来到 SABOO THAILAND！\n\n有什么可以帮您的吗？😊"
                     else:
-                        response_text = "Hello! 💕 Welcome to SABOO THAILAND!\\n\\nHow can I help you today? 😊"
+                        response_text = "Hello! 💕 Welcome to SABOO THAILAND!\n\nHow can I help you today? 😊"
                 else:
                     response_text = get_gpt_response(user_text, user_id)
                 
@@ -883,7 +888,7 @@ if __name__ == '__main__':
     logger.info(f"🚀 Flask 서버를 포트 {port}에서 시작합니다. (디버그 모드: {debug_mode})")
     logger.info("📂 데이터 소스: company_info 폴더 + price_list 폴더 개별 파일 검색")
     logger.info("🔍 제품 검색: price_list 폴더에서 실시간 검색 지원")
-    logger.info("🌈 줄바꿈 처리 기능: 웹용 <br>, LINE용 \\n\\n 지원")
+    logger.info("🌈 줄바꿈 처리 기능: 웹용 <br>, LINE용 \n\n 지원")
     logger.info("📏 응답 길이 제어: 긴 답변 자동 축약 + '더 자세한 정보' 안내")
     logger.info("🧠 대화 컨텍스트: 사용자별 최근 대화 기억 (더 자세한 정보 요청 시 활용)")
     logger.info("🌍 다국어 지원: 10개 언어별 '더 자세한 정보' 키워드 감지")
