@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Optional: JSON
+# (나중에 필요할 때 추가 — 지금은 빼도 됨)
+# *.json
